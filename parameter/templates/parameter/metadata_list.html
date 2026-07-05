@@ -1,0 +1,41 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}元数据管理{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📊 预设常用元数据</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>元数据名称</th>
+                    <th>字段类型</th>
+                    <th>长度</th>
+                    <th>小数位数</th>
+                    <th>前端控件</th>
+                    <th>存储方式</th>
+                    <th>必填</th>
+                    <th>校验规则</th>
+                    <th>描述</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meta in metadata_list %}
+                <tr>
+                    <td>{{ meta.name }}</td>
+                    <td>{{ meta.field_type }}</td>
+                    <td>{{ meta.length|default:'-' }}</td>
+                    <td>{{ meta.decimal_places|default:'-' }}</td>
+                    <td>{{ meta.control_type }}</td>
+                    <td>{{ meta.storage_type }}</td>
+                    <td>{% if meta.is_required == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{{ meta.validation_rule|default:'-' }}</td>
+                    <td>{{ meta.description|default:'-' }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" style="text-align: center;">暂无元数据配置</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

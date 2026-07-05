@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>参数表配置辅助工具 - {% block title %}首页{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background-color: #f5f7fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header .user-info { float: right; font-size: 14px; margin-top: 4px; }
+        .sidebar { width: 220px; background: #2c3e50; min-height: calc(100vh - 60px); float: left; }
+        .sidebar .nav-item { display: block; color: #ecf0f1; padding: 12px 20px; text-decoration: none; border-left: 3px solid transparent; }
+        .sidebar .nav-item:hover, .sidebar .nav-item.active { background: #34495e; border-left-color: #667eea; }
+        .sidebar .nav-item i { margin-right: 8px; }
+        .main-content { margin-left: 220px; padding: 24px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .btn { display: inline-block; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 14px; cursor: pointer; border: none; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .table th { background: #f8f9fa; font-weight: 600; color: #555; }
+        .table tr:hover { background: #f9fafb; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .badge-draft { background: #f39c12; color: white; }
+        .badge-active { background: #27ae60; color: white; }
+        .badge-deprecated { background: #95a5a6; color: white; }
+        .badge-pending { background: #f39c12; color: white; }
+        .badge-approved { background: #3498db; color: white; }
+        .badge-in_progress { background: #9b59b6; color: white; }
+        .badge-completed { background: #27ae60; color: white; }
+        .badge-rejected { background: #e74c3c; color: white; }
+        .badge-passed { background: #27ae60; color: white; }
+        .badge-failed { background: #e74c3c; color: white; }
+        .badge-skipped { background: #95a5a6; color: white; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: #555; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.2); }
+        .search-box { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 200px; margin-right: 8px; }
+        .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; margin-right: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .stat-card .stat-number { font-size: 32px; font-weight: 700; color: #667eea; }
+        .stat-card .stat-label { font-size: 14px; color: #888; margin-top: 4px; }
+        .stat-card:nth-child(2) .stat-number { color: #27ae60; }
+        .stat-card:nth-child(3) .stat-number { color: #3498db; }
+        .stat-card:nth-child(4) .stat-number { color: #f39c12; }
+        .detail-info { margin-bottom: 16px; }
+        .detail-info .label { display: inline-block; width: 120px; font-weight: 500; color: #555; }
+        .detail-info .value { color: #333; }
+        .content-text { white-space: pre-wrap; font-family: inherit; line-height: 1.8; }
+        .clearfix { clear: both; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>参数表配置辅助工具</h1>
+        <div class="user-info">当前用户: 管理员</div>
+    </div>
+    
+    <div class="sidebar">
+        <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}"><i>🏠</i> 首页</a>
+        <a href="/tables/" class="nav-item {% if 'tables' in request.path %}active{% endif %}"><i>📋</i> 参数表清单</a>
+        <a href="/metadata/" class="nav-item {% if 'metadata' in request.path %}active{% endif %}"><i>📊</i> 元数据管理</a>
+        <a href="/requirements/" class="nav-item {% if 'requirements' in request.path %}active{% endif %}"><i>📝</i> 需求登记</a>
+        <a href="/task-documents/" class="nav-item {% if 'task-documents' in request.path %}active{% endif %}"><i>📄</i> 任务书管理</a>
+        <a href="/config-scripts/" class="nav-item {% if 'config-scripts' in request.path %}active{% endif %}"><i>⚙️</i> 配置脚本</a>
+        <a href="/index-id/" class="nav-item {% if 'index-id' in request.path %}active{% endif %}"><i>🔑</i> INDEXID配置</a>
+        <a href="/test-cases/" class="nav-item {% if 'test-cases' in request.path %}active{% endif %}"><i>🧪</i> 测试用例</a>
+        <a href="/automation-test/" class="nav-item {% if 'automation-test' in request.path %}active{% endif %}"><i>🤖</i> 自动化测试</a>
+        <a href="/sql-manager/" class="nav-item {% if 'sql-manager' in request.path %}active{% endif %}"><i>📦</i> SQL脚本维护</a>
+    </div>
+    
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+id,name,field_type,length,decimal_places,control_type,storage_type,default_value,is_required,validation_rule,description
+1,STRING_50,string,50,,input,code_only,,false,^[a-zA-Z0-9_]{1,50}$,50字符以内的字符串
+2,STRING_100,string,100,,input,code_only,,false,^[a-zA-Z0-9_]{1,100}$,100字符以内的字符串
+3,STRING_200,string,200,,input,code_only,,false,^.{1,200}$,200字符以内的字符串
+4,INTEGER,string,10,,input,code_only,,false,^-?\d{1,10}$,整数类型
+5,DECIMAL_2,decimal,10,2,input,code_only,,false,^-?\d{1,8}(\.\d{1,2})?$ ,小数，保留2位
+6,DATE,date,,,"datepicker",code_only,,false,\d{4}-\d{2}-\d{2},日期格式
+7,DATETIME,datetime,,,"datepicker",code_only,,false,\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},日期时间格式
+8,BOOLEAN,boolean,,,radio,code_only,false,false,,布尔值
+9,TEXT,text,,,textarea,code_only,,false,,长文本类型
+10,STATUS_CODE,string,20,,select,code_name,,true,^[A-Z_]{1,20}$,状态编码，独立存储CODE和NAME

@@ -1,0 +1,92 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ tables_count }}</div>
+            <div class="stat-label">参数表数量</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ requirements_count }}</div>
+            <div class="stat-label">需求数量</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ docs_count }}</div>
+            <div class="stat-label">任务书数量</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ scripts_count }}</div>
+            <div class="stat-label">配置脚本数量</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📝 最新需求</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>需求编号</th>
+                    <th>需求标题</th>
+                    <th>类型</th>
+                    <th>状态</th>
+                    <th>申请日期</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in recent_requirements %}
+                <tr>
+                    <td><a href="/requirements/{{ req.id }}/">{{ req.requirement_no }}</a></td>
+                    <td>{{ req.title }}</td>
+                    <td>
+                        {% if req.requirement_type == 'new' %}新增
+                        {% elif req.requirement_type == 'modify' %}变更
+                        {% elif req.requirement_type == 'reuse' %}复用
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
+                    <td>{{ req.request_date }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align: center;">暂无需求</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 12px; text-align: right;">
+            <a href="/requirements/" class="btn btn-primary btn-sm">查看全部需求</a>
+            <a href="/requirements/create/" class="btn btn-success btn-sm">+ 新增需求</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📋 最新参数表</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>参数表名称</th>
+                    <th>业务领域</th>
+                    <th>负责人</th>
+                    <th>状态</th>
+                    <th>最后更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for table in recent_tables %}
+                <tr>
+                    <td><a href="/tables/{{ table.id }}/">{{ table.name }}</a></td>
+                    <td>{{ table.domain }}</td>
+                    <td>{{ table.owner }}</td>
+                    <td><span class="badge badge-{{ table.status }}">{{ table.status }}</span></td>
+                    <td>{{ table.updated_at }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="text-align: center;">暂无参数表</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 12px; text-align: right;">
+            <a href="/tables/" class="btn btn-primary btn-sm">查看全部参数表</a>
+        </div>
+    </div>
+{% endblock %}

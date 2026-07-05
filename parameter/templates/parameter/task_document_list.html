@@ -1,0 +1,39 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}任务书管理{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📄 任务书附件导出</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>任务书编号</th>
+                    <th>标题</th>
+                    <th>文档类型</th>
+                    <th>关联需求</th>
+                    <th>生成时间</th>
+                    <th>导出时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.document_no }}</td>
+                    <td>{{ doc.title }}</td>
+                    <td>{{ doc.document_type }}</td>
+                    <td><a href="/requirements/{{ doc.requirement_id }}/">{{ doc.requirement_no }} - {{ doc.requirement_title }}</a></td>
+                    <td>{{ doc.generated_at }}</td>
+                    <td>{{ doc.exported_at|default:'-' }}</td>
+                    <td>
+                        <a href="/task-documents/export/{{ doc.id }}/" class="btn btn-primary btn-sm">导出</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align: center;">暂无任务书</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

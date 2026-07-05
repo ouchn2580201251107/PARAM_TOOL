@@ -1,0 +1,152 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}{{ requirement.requirement_no }} - 需求详情{% endblock %}
+
+{% block content %}
+    {% if requirement %}
+    <div class="card">
+        <div class="card-title">📝 需求详情 - {{ requirement.requirement_no }}</div>
+        <div class="detail-info">
+            <span class="label">需求编号：</span><span class="value">{{ requirement.requirement_no }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">需求标题：</span><span class="value">{{ requirement.title }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">需求类型：</span><span class="value">
+                {% if requirement.requirement_type == 'new' %}新增
+                {% elif requirement.requirement_type == 'modify' %}变更
+                {% elif requirement.requirement_type == 'reuse' %}复用
+                {% endif %}
+            </span>
+        </div>
+        <div class="detail-info">
+            <span class="label">关联参数表：</span><span class="value">{{ requirement.table_name|default:'-' }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">业务说明：</span><span class="value">{{ requirement.business_description }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">申请人：</span><span class="value">{{ requirement.requester }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">申请日期：</span><span class="value">{{ requirement.request_date }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">状态：</span><span class="value"><span class="badge badge-{{ requirement.status }}">{{ requirement.status }}</span></span>
+        </div>
+        <div class="detail-info">
+            <span class="label">故事点：</span><span class="value">{{ requirement.story_points|default:'-' }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">冲刺：</span><span class="value">{{ requirement.sprint|default:'-' }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">项目管理平台ID：</span><span class="value">{{ requirement.project_platform_id|default:'-' }}</span>
+        </div>
+        <div style="margin-top: 16px;">
+            <a href="/requirements/" class="btn btn-primary">返回列表</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📄 关联任务书</div>
+        {% if documents %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>任务书编号</th>
+                    <th>标题</th>
+                    <th>类型</th>
+                    <th>生成时间</th>
+                    <th>导出时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.document_no }}</td>
+                    <td>{{ doc.title }}</td>
+                    <td>{{ doc.document_type }}</td>
+                    <td>{{ doc.generated_at }}</td>
+                    <td>{{ doc.exported_at|default:'-' }}</td>
+                    <td>
+                        <a href="/task-documents/export/{{ doc.id }}/" class="btn btn-primary btn-sm">导出</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>暂无关联任务书</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title">⚙️ 关联配置脚本</div>
+        {% if scripts %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>脚本类型</th>
+                    <th>状态</th>
+                    <th>目标环境</th>
+                    <th>提交时间</th>
+                    <th>部署时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for script in scripts %}
+                <tr>
+                    <td>{{ script.script_type }}</td>
+                    <td><span class="badge badge-{{ script.status }}">{{ script.status }}</span></td>
+                    <td>{{ script.environment|default:'-' }}</td>
+                    <td>{{ script.submitted_at|default:'-' }}</td>
+                    <td>{{ script.deployed_at|default:'-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>暂无关联配置脚本</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title">🧪 关联测试用例</div>
+        {% if test_cases %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>用例编号</th>
+                    <th>用例标题</th>
+                    <th>类型</th>
+                    <th>状态</th>
+                    <th>自动化</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in test_cases %}
+                <tr>
+                    <td>{{ case.case_no }}</td>
+                    <td>{{ case.title }}</td>
+                    <td>{{ case.case_type }}</td>
+                    <td><span class="badge badge-{{ case.status }}">{{ case.status }}</span></td>
+                    <td>{% if case.automated == 'True' %}是{% else %}否{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>暂无关联测试用例</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-title">需求不存在</div>
+        <p>未找到指定的需求，请返回列表重新选择。</p>
+        <a href="/requirements/" class="btn btn-primary">返回列表</a>
+    </div>
+    {% endif %}
+{% endblock %}

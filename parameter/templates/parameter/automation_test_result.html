@@ -1,0 +1,54 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}自动化测试结果{% endblock %}
+
+{% block content %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total }}</div>
+            <div class="stat-label">测试总数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ passed }}</div>
+            <div class="stat-label">通过</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ failed }}</div>
+            <div class="stat-label">失败</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ skipped }}</div>
+            <div class="stat-label">跳过</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🤖 自动化测试部署 - 测试结果</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>用例编号</th>
+                    <th>用例标题</th>
+                    <th>执行日期</th>
+                    <th>状态</th>
+                    <th>错误信息</th>
+                    <th>执行时长(秒)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr>
+                    <td>{{ result.case_no }}</td>
+                    <td>{{ result.case_title }}</td>
+                    <td>{{ result.execution_date }}</td>
+                    <td><span class="badge badge-{{ result.status }}">{{ result.status }}</span></td>
+                    <td>{{ result.error_message|default:'-'|truncatechars:100 }}</td>
+                    <td>{{ result.duration|default:'-' }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align: center;">暂无测试结果</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

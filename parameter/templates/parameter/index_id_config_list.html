@@ -1,0 +1,63 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}INDEXID配置{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">🔑 INDEXID配置与业务信息登记</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>INDEXID</th>
+                    <th>业务名称</th>
+                    <th>业务说明</th>
+                    <th>关联参数表</th>
+                    <th>自定义列名</th>
+                    <th>显示字段</th>
+                    <th>校验规则</th>
+                    <th>创建时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for config in configs %}
+                <tr>
+                    <td>{{ config.index_id }}</td>
+                    <td>{{ config.business_name }}</td>
+                    <td>{{ config.business_description|default:'-' }}</td>
+                    <td>{{ config.table_name }}</td>
+                    <td>
+                        {% if config.custom_column_names %}
+                            {% for k, v in config.custom_column_names.items %}
+                                {{ k }}: {{ v }}<br>
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if config.display_fields %}
+                            {% for field in config.display_fields %}
+                                {{ field }}<br>
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if config.validation_rules %}
+                            {% for k, v in config.validation_rules.items %}
+                                {{ k }}: {{ v }}<br>
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ config.created_at }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align: center;">暂无INDEXID配置</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

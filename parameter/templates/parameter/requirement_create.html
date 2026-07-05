@@ -1,0 +1,57 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}新增需求{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📝 业务需求登记 - 新增需求</div>
+        <form method="post" action="/requirements/create/">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>需求标题 *</label>
+                <input type="text" name="title" required placeholder="请输入需求标题">
+            </div>
+            <div class="form-group">
+                <label>需求类型 *</label>
+                <select name="requirement_type">
+                    <option value="new">新增</option>
+                    <option value="modify">变更</option>
+                    <option value="reuse">复用</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>关联参数表</label>
+                <select name="parameter_table_id">
+                    <option value="">请选择参数表（可选）</option>
+                    {% for table in tables %}
+                    <option value="{{ table.id }}">{{ table.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>业务说明 *</label>
+                <textarea name="business_description" required placeholder="请输入业务说明"></textarea>
+            </div>
+            <div class="form-group">
+                <label>申请人 *</label>
+                <input type="text" name="requester" required placeholder="请输入申请人姓名">
+            </div>
+            <div class="form-group">
+                <label>故事点</label>
+                <input type="number" name="story_points" placeholder="请输入故事点">
+            </div>
+            <div class="form-group">
+                <label>冲刺</label>
+                <input type="text" name="sprint" placeholder="如：Sprint-1">
+            </div>
+            <div class="form-group">
+                <label>项目管理平台ID</label>
+                <input type="text" name="project_platform_id" placeholder="如：ZD-2024-001">
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-success">提交需求</button>
+                <a href="/requirements/" class="btn btn-primary">返回列表</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

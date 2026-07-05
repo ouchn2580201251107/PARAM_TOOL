@@ -1,0 +1,39 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}测试用例{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">🧪 测试用例生成</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>用例编号</th>
+                    <th>用例标题</th>
+                    <th>用例类型</th>
+                    <th>关联需求</th>
+                    <th>前置条件</th>
+                    <th>状态</th>
+                    <th>自动化</th>
+                    <th>创建时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for case in cases %}
+                <tr>
+                    <td>{{ case.case_no }}</td>
+                    <td>{{ case.title }}</td>
+                    <td>{{ case.case_type }}</td>
+                    <td><a href="/requirements/{{ case.requirement_id }}/">{{ case.requirement_no }} - {{ case.requirement_title }}</a></td>
+                    <td>{{ case.preconditions|default:'-'|truncatechars:50 }}</td>
+                    <td><span class="badge badge-{{ case.status }}">{{ case.status }}</span></td>
+                    <td>{% if case.automated == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{{ case.created_at }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align: center;">暂无测试用例</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

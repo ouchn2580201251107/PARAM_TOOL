@@ -1,0 +1,70 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}参数表清单{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📋 参数表业务说明底账管理</div>
+        <div style="margin-bottom: 16px;">
+            <input type="text" class="search-box" placeholder="搜索参数表名称或说明" value="{{ search_name }}" onkeyup="if(event.keyCode==13) search()">
+            <select class="filter-select" onchange="filter()">
+                <option value="">全部业务领域</option>
+                {% for domain in domains %}
+                <option value="{{ domain }}" {% if domain_filter == domain %}selected{% endif %}>{{ domain }}</option>
+                {% endfor %}
+            </select>
+            <select class="filter-select" onchange="filter()">
+                <option value="">全部状态</option>
+                {% for status in statuses %}
+                <option value="{{ status.value }}" {% if status_filter == status.value %}selected{% endif %}>{{ status.label }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary" onclick="search()">搜索</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>参数表名称</th>
+                    <th>业务说明</th>
+                    <th>业务领域</th>
+                    <th>负责人</th>
+                    <th>状态</th>
+                    <th>版本</th>
+                    <th>最后更新</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for table in tables %}
+                <tr>
+                    <td><a href="/tables/{{ table.id }}/">{{ table.name }}</a></td>
+                    <td>{{ table.business_description|truncatechars:50 }}</td>
+                    <td>{{ table.domain }}</td>
+                    <td>{{ table.owner }}</td>
+                    <td><span class="badge badge-{{ table.status }}">{{ table.status }}</span></td>
+                    <td>V{{ table.version }}</td>
+                    <td>{{ table.updated_at }}</td>
+                    <td>
+                        <a href="/tables/{{ table.id }}/" class="btn btn-primary btn-sm">详情</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align: center;">暂无参数表</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function search() {
+            var keyword = document.querySelector('.search-box').value;
+            var domain = document.querySelectorAll('.filter-select')[0].value;
+            var status = document.querySelectorAll('.filter-select')[1].value;
+            var url = '/tables/?search=' + encodeURIComponent(keyword) + '&domain=' + domain + '&status=' + status;
+            window.location.href = url;
+        }
+        function filter() {
+            search();
+        }
+    </script>
+{% endblock %}

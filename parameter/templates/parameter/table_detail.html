@@ -1,0 +1,82 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}{{ table.name }} - 参数表详情{% endblock %}
+
+{% block content %}
+    {% if table %}
+    <div class="card">
+        <div class="card-title">📋 参数表详情 - {{ table.name }}</div>
+        <div class="detail-info">
+            <span class="label">参数表名称：</span><span class="value">{{ table.name }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">业务说明：</span><span class="value">{{ table.business_description }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">业务领域：</span><span class="value">{{ table.domain }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">负责人：</span><span class="value">{{ table.owner }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">状态：</span><span class="value"><span class="badge badge-{{ table.status }}">{{ table.status }}</span></span>
+        </div>
+        <div class="detail-info">
+            <span class="label">版本：</span><span class="value">V{{ table.version }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">创建日期：</span><span class="value">{{ table.created_at }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">最后更新：</span><span class="value">{{ table.updated_at }}</span>
+        </div>
+        <div style="margin-top: 16px;">
+            <a href="/tables/" class="btn btn-primary">返回列表</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📊 字段定义列表</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>排序号</th>
+                    <th>字段名</th>
+                    <th>显示名称</th>
+                    <th>字段类型</th>
+                    <th>长度</th>
+                    <th>控件类型</th>
+                    <th>存储方式</th>
+                    <th>必填</th>
+                    <th>显示</th>
+                    <th>定制开发</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in fields %}
+                <tr>
+                    <td>{{ field.sort_order }}</td>
+                    <td>{{ field.field_name }}</td>
+                    <td>{{ field.display_name }}</td>
+                    <td>{{ field.field_type }}</td>
+                    <td>{{ field.length|default:'-' }}</td>
+                    <td>{{ field.control_type }}</td>
+                    <td>{{ field.storage_type }}</td>
+                    <td>{% if field.is_required == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.is_visible == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.is_custom == 'True' %}是{% else %}否{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" style="text-align: center;">暂无字段定义</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-title">参数表不存在</div>
+        <p>未找到指定的参数表，请返回列表重新选择。</p>
+        <a href="/tables/" class="btn btn-primary">返回列表</a>
+    </div>
+    {% endif %}
+{% endblock %}
