@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .ai import views as ai_views
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -16,4 +17,11 @@ urlpatterns = [
     path('test-cases/', views.TestCaseListView.as_view(), name='test_case_list'),
     path('automation-test/', views.AutomationTestResultView.as_view(), name='automation_test_result'),
     path('sql-manager/', views.SqlManagerView.as_view(), name='sql_manager'),
+    path('ai-analysis/', ai_views.AIAnalysisView.as_view(), name='ai_analysis'),
+    path('ai-analysis/unification/', ai_views.AIUnificationAnalysisView.as_view(), name='ai_unification_analysis'),
+    path('ai-analysis/normalization/', ai_views.AINormalizationAnalysisView.as_view(), name='ai_normalization_analysis'),
+    path('ai-generation/', ai_views.AIGenerationView.as_view(), name='ai_generation'),
+    path('ai-generation/task-document/', ai_views.AITaskDocumentGenerationView.as_view(), name='ai_task_document_generation'),
+    path('ai-generation/test-case/', ai_views.AITestCaseGenerationView.as_view(), name='ai_test_case_generation'),
+    path('ai-generation/sql/', ai_views.AISQLGenerationView.as_view(), name='ai_sql_generation'),
 ]

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-00o!a5ep++i&v@!q@5v)vpc5#s8%v1hp&#uqp&ubf0vx5k783z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'testserver']
+ALLOWED_HOSTS = ['localhost', 'testserver', '127.0.0.1']
 
 
 # Application definition
@@ -144,6 +144,11 @@ LOGGING = {
     },
     'loggers': {
         'parameter': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'parameter.ai': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,

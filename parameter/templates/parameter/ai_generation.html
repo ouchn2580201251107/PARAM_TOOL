@@ -1,0 +1,278 @@
+{% extends 'parameter/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>AI智能生成</h2>
+    <p>利用AI技术自动生成任务书、测试用例和SQL语句</p>
+</div>
+
+<div class="content-section">
+    <div class="section-header">
+        <h3>任务书生成</h3>
+        <p>根据需求自动生成规范格式的任务书内容</p>
+    </div>
+    
+    <form method="post" action="{% url 'ai_task_document_generation' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>选择需求</label>
+            <select name="requirement_id" class="form-control">
+                <option value="">请选择需求</option>
+                {% for req in requirements %}
+                <option value="{{ req.id }}" {% if req.id == requirement_id|add:"0" %}selected{% endif %}>{{ req.requirement_no }} - {{ req.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">生成任务书</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <div class="section-header">
+        <h3>测试用例生成</h3>
+        <p>根据需求自动生成覆盖正常流程、边界条件、异常场景的测试用例</p>
+    </div>
+    
+    <form method="post" action="{% url 'ai_test_case_generation' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>选择需求</label>
+            <select name="requirement_id" class="form-control">
+                <option value="">请选择需求</option>
+                {% for req in requirements %}
+                <option value="{{ req.id }}" {% if req.id == requirement_id|add:"0" %}selected{% endif %}>{{ req.requirement_no }} - {{ req.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">生成测试用例</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <div class="section-header">
+        <h3>SQL语句生成</h3>
+        <p>根据自然语言描述自动生成SQL语句</p>
+    </div>
+    
+    <form method="post" action="{% url 'ai_sql_generation' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>选择参数表</label>
+            <select name="table_id" class="form-control">
+                <option value="">请选择参数表</option>
+                {% for table in tables %}
+                <option value="{{ table.id }}" {% if table.id == table_id|add:"0" %}selected{% endif %}>{{ table.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>自然语言查询</label>
+            <textarea name="natural_query" class="form-control" rows="3" placeholder="例如：查询所有状态为active的记录">{{ natural_query }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">生成SQL</button>
+    </form>
+</div>
+
+{% if generation_result %}
+<div class="content-section">
+    <div class="section-header">
+        <h3>生成结果</h3>
+    </div>
+    
+    {% if generation_result.success %}
+    <div class="success-message">{{ generation_result.result }}</div>
+    <div class="analysis-confidence">置信度：{{ generation_result.confidence|floatformat:2 }}</div>
+    
+    {% if generation_type == 'task_document' %}
+    <div class="generation-details">
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">字数</span>
+                <span class="stat-value">{{ generation_result.details.word_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">字段数</span>
+                <span class="stat-value">{{ generation_result.details.field_count }}</span>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <h4>任务书内容</h4>
+            <pre class="document-content">{{ generation_result.details.content }}</pre>
+        </div>
+        
+        <div class="detail-section">
+            <h4>包含章节</h4>
+            <div class="tags">
+                {% for section in generation_result.details.sections %}
+                <span class="tag">{{ section }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if generation_type == 'test_case' %}
+    <div class="generation-details">
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-label">总用例数</span>
+                <span class="stat-value">{{ generation_result.details.total_cases }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">正常流程</span>
+                <span class="stat-value">{{ generation_result.details.normal_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">边界条件</span>
+                <span class="stat-value">{{ generation_result.details.boundary_count }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">异常场景</span>
+                <span class="stat-value">{{ generation_result.details.exception_count }}</span>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <h4>测试用例列表</h4>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>用例编号</th>
+                        <th>用例名称</th>
+                        <th>类型</th>
+                        <th>优先级</th>
+                        <th>前置条件</th>
+                        <th>步骤</th>
+                        <th>预期结果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in generation_result.details.cases %}
+                    <tr>
+                        <td>{{ case.case_no }}</td>
+                        <td>{{ case.title }}</td>
+                        <td><span class="badge badge-{{ case.case_type }}">{{ case.case_type }}</span></td>
+                        <td><span class="badge badge-priority-{{ case.priority }}">{{ case.priority }}</span></td>
+                        <td>{{ case.preconditions }}</td>
+                        <td>{{ case.steps }}</td>
+                        <td>{{ case.expected_result }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if generation_type == 'sql' %}
+    <div class="generation-details">
+        <div class="detail-section">
+            <h4>生成的SQL语句</h4>
+            <div class="sql-container">
+                <code>{{ generation_result.details.sql }}</code>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <h4>SQL信息</h4>
+            <div class="tags">
+                <span class="tag">表名: {{ generation_result.details.table }}</span>
+                <span class="tag">类型: {{ generation_result.details.type }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="error-message">生成失败：{{ generation_result.error }}</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-confidence {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+    .generation-details {
+        margin-top: 16px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .detail-section {
+        margin-bottom: 20px;
+    }
+    .detail-section h4 {
+        margin-bottom: 12px;
+        color: #333;
+    }
+    .stats-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    .stat-item {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+    }
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 4px;
+    }
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+    }
+    .document-content {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 16px;
+        border-radius: 8px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .tag {
+        padding: 4px 12px;
+        background: #667eea;
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .sql-container {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 16px;
+        border-radius: 8px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 14px;
+        overflow-x: auto;
+    }
+    .badge-normal { background: #27ae60; }
+    .badge-boundary { background: #f39c12; }
+    .badge-exception { background: #e74c3c; }
+    .badge-priority-high { background: #e74c3c; }
+    .badge-priority-medium { background: #f39c12; }
+    .badge-priority-low { background: #95a5a6; }
+</style>
+{% endblock %}

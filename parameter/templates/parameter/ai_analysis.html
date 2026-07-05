@@ -1,0 +1,229 @@
+{% extends 'parameter/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>AI辅助分析</h2>
+    <p>利用AI技术分析参数表统一可行性和字段定义规范性</p>
+</div>
+
+<div class="content-section">
+    <div class="section-header">
+        <h3>参数表统一分析</h3>
+        <p>分析参数表是否可以统一到SIMPLELIST表</p>
+    </div>
+    
+    <form method="post" action="{% url 'ai_unification_analysis' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>选择参数表</label>
+            <select name="table_id" class="form-control">
+                <option value="">请选择参数表</option>
+                {% for table in tables %}
+                <option value="{{ table.id }}" {% if table.id == table_id|add:"0" %}selected{% endif %}>{{ table.name }} - {{ table.domain }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">开始AI分析</button>
+    </form>
+</div>
+
+<div class="content-section">
+    <div class="section-header">
+        <h3>字段定义规范性分析</h3>
+        <p>检查字段定义是否符合规范，包括命名、类型匹配、长度设置等</p>
+    </div>
+    
+    <form method="post" action="{% url 'ai_normalization_analysis' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>选择参数表</label>
+            <select name="table_id" class="form-control">
+                <option value="">请选择参数表</option>
+                {% for table in tables %}
+                <option value="{{ table.id }}" {% if table.id == table_id|add:"0" %}selected{% endif %}>{{ table.name }} - {{ table.domain }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">开始规范检查</button>
+    </form>
+</div>
+
+{% if analysis_result %}
+<div class="content-section">
+    <div class="section-header">
+        <h3>分析结果</h3>
+    </div>
+    
+    {% if analysis_result.success %}
+    <div class="success-message">{{ analysis_result.result }}</div>
+    <div class="analysis-confidence">置信度：{{ analysis_result.confidence|floatformat:2 }}</div>
+    
+    {% if analysis_type == 'unification' %}
+    <div class="analysis-details">
+        <div class="detail-section">
+            <h4>评分详情</h4>
+            <div class="score-bar">
+                <div class="score-fill" style="width: {{ analysis_result.details.score|floatformat:0 }}%">
+                    {{ analysis_result.details.score|floatformat:0 }}%
+                </div>
+            </div>
+            <ul>
+                {% for reason in analysis_result.details.score_details %}
+                <li>✓ {{ reason }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="detail-section">
+            <h4>建议</h4>
+            <ul>
+                {% for suggestion in analysis_result.details.suggestions %}
+                <li>{{ suggestion }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="detail-section">
+            <h4>最终推荐</h4>
+            <span class="recommendation">{{ analysis_result.details.recommendation }}</span>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if analysis_type == 'normalization' %}
+    <div class="analysis-details">
+        <div class="detail-section">
+            <h4>问题统计</h4>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-label">总问题数</span>
+                    <span class="stat-value">{{ analysis_result.details.issues_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">错误</span>
+                    <span class="stat-value error">{{ analysis_result.details.error_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">警告</span>
+                    <span class="stat-value warning">{{ analysis_result.details.warning_count }}</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if analysis_result.details.issues %}
+        <div class="detail-section">
+            <h4>问题详情</h4>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>字段</th>
+                        <th>类型</th>
+                        <th>严重程度</th>
+                        <th>问题描述</th>
+                        <th>建议</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in analysis_result.details.issues %}
+                    <tr>
+                        <td>{{ issue.field }}</td>
+                        <td>{{ issue.type }}</td>
+                        <td><span class="badge badge-{{ issue.severity }}">{{ issue.severity }}</span></td>
+                        <td>{{ issue.message }}</td>
+                        <td>{{ issue.suggestion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="detail-section">
+            <p class="success-text">🎉 所有字段定义均符合规范，未发现问题！</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="error-message">分析失败：{{ analysis_result.error }}</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-confidence {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+    .analysis-details {
+        margin-top: 16px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .detail-section {
+        margin-bottom: 20px;
+    }
+    .detail-section h4 {
+        margin-bottom: 12px;
+        color: #333;
+    }
+    .score-bar {
+        height: 24px;
+        background: #eee;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+    .score-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        color: white;
+        text-align: center;
+        line-height: 24px;
+        font-weight: bold;
+        transition: width 0.5s ease;
+    }
+    .recommendation {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #667eea;
+        color: white;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    .stats-row {
+        display: flex;
+        gap: 20px;
+    }
+    .stat-item {
+        flex: 1;
+        text-align: center;
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+    }
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 4px;
+    }
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+    }
+    .stat-value.error { color: #e74c3c; }
+    .stat-value.warning { color: #f39c12; }
+    .success-text {
+        color: #27ae60;
+        font-size: 16px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
