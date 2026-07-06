@@ -1,3 +1,10 @@
+"""
+数据导入脚本
+从CSV文件导入系统初始数据，包括参数表、元数据、字段定义、需求、任务书等
+
+使用方法：
+    python import_data.py
+"""
 import os
 import sys
 import csv
@@ -11,8 +18,18 @@ django.setup()
 from parameter.models import ParameterTable, Metadata, FieldDefinition, Requirement, TaskDocument, ConfigScript, IndexIdConfig, TestCase, AutomationTestResult
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'parameter', 'data')
+"""CSV数据文件存放目录"""
 
 def read_csv_file(filename):
+    """
+    读取CSV文件并返回字典列表
+    
+    Args:
+        filename: CSV文件名
+        
+    Returns:
+        list: 包含每行数据的字典列表
+    """
     file_path = os.path.join(DATA_DIR, filename)
     data = []
     if os.path.exists(file_path):

@@ -1,3 +1,7 @@
+"""
+URL路由配置
+定义parameter应用的所有URL路由，包括认证、参数表、元数据、需求、AI等模块
+"""
 from django.urls import path
 from . import views
 from . import auth_views

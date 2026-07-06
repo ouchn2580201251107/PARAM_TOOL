@@ -1,3 +1,7 @@
+"""
+AI客户端模块
+提供AI服务的客户端封装，包含基础抽象类和Mock实现用于开发测试
+"""
 import logging
 import json
 import time
@@ -5,14 +9,49 @@ import time
 logger = logging.getLogger(__name__)
 
 class BaseAIClient:
+    """
+    AI客户端基类
+    定义AI服务的标准接口，具体实现需继承此类并实现analyze和generate方法
+    """
+    
     def analyze(self, prompt, **kwargs):
+        """
+        执行AI分析
+        
+        Args:
+            prompt: 分析提示词
+            **kwargs: 额外参数
+            
+        Returns:
+            dict: 分析结果
+        """
         raise NotImplementedError
     
     def generate(self, prompt, **kwargs):
+        """
+        执行AI生成
+        
+        Args:
+            prompt: 生成提示词
+            **kwargs: 额外参数
+            
+        Returns:
+            dict: 生成结果
+        """
         raise NotImplementedError
 
 class MockAIClient(BaseAIClient):
+    """
+    Mock AI客户端
+    用于开发和测试环境，模拟AI服务的返回结果，无需实际调用AI接口
+    """
+    
     def analyze(self, prompt, **kwargs):
+        """
+        模拟AI分析
+        
+        根据提示词内容智能返回预设的分析结果
+        """
         logger.info(f"[MockAIClient] 执行AI分析: {prompt[:100]}...")
         time.sleep(1)
         
@@ -30,6 +69,11 @@ class MockAIClient(BaseAIClient):
         }
     
     def generate(self, prompt, **kwargs):
+        """
+        模拟AI生成
+        
+        根据提示词内容智能返回预设的生成结果
+        """
         logger.info(f"[MockAIClient] 执行AI生成: {prompt[:100]}...")
         time.sleep(1.5)
         

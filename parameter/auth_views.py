@@ -1,3 +1,7 @@
+"""
+认证与用户管理模块
+提供登录、登出、用户管理、密码修改等功能，包含基于角色的权限控制装饰器
+"""
 import logging
 from django.shortcuts import render, redirect
 from django.views import View
@@ -9,6 +13,10 @@ from .models import User, Role
 logger = logging.getLogger(__name__)
 
 def login_required(view_func):
+    """
+    登录验证装饰器
+    验证用户是否已登录，未登录则重定向到登录页面
+    """
     def wrapper(request, *args, **kwargs):
         user_id = request.session.get('user_id')
         if not user_id:
@@ -29,6 +37,10 @@ def login_required(view_func):
     return wrapper
 
 def admin_required(view_func):
+    """
+    管理员权限验证装饰器
+    验证用户是否为管理员角色，无权限则显示错误页面
+    """
     def wrapper(request, *args, **kwargs):
         user_id = request.session.get('user_id')
         if not user_id:
@@ -45,6 +57,13 @@ def admin_required(view_func):
     return wrapper
 
 def role_required(allowed_roles):
+    """
+    角色权限验证装饰器
+    验证用户角色是否在允许的角色列表中，无权限则显示错误页面
+    
+    Args:
+        allowed_roles: 允许访问的角色编码列表，如 ['admin', 'technical']
+    """
     def decorator(view_func):
         def wrapper(request, *args, **kwargs):
             user_id = request.session.get('user_id')
@@ -63,6 +82,10 @@ def role_required(allowed_roles):
     return decorator
 
 class LoginView(View):
+    """
+    用户登录视图
+    提供登录页面展示和登录验证功能
+    """
     def get(self, request):
         logger.info(f"[LoginView] 加载登录页面")
         return render(request, 'parameter/login.html')
@@ -94,6 +117,10 @@ class LoginView(View):
             return render(request, 'parameter/login.html', {'error': '用户名或密码错误'})
 
 class LogoutView(View):
+    """
+    用户登出视图
+    清除用户会话并重定向到登录页面
+    """
     def get(self, request):
         user_id = request.session.get('user_id')
         if user_id:
@@ -107,6 +134,10 @@ class LogoutView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class UserListView(View):
+    """
+    用户列表视图
+    仅管理员可访问，展示系统所有用户信息
+    """
     def get(self, request):
         logger.info(f"[UserListView] 管理员 {request.user.username} 查看用户列表")
         users = User.objects.select_related('role').all().order_by('-created_at')
@@ -114,6 +145,10 @@ class UserListView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class UserCreateView(View):
+    """
+    用户创建视图
+    仅管理员可访问，用于创建新用户并分配角色
+    """
     def get(self, request):
         logger.info(f"[UserCreateView] 管理员 {request.user.username} 加载创建用户页面")
         roles = Role.objects.all()
@@ -181,6 +216,10 @@ class UserCreateView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class UserEditView(View):
+    """
+    用户编辑视图
+    仅管理员可访问，用于修改用户信息和角色
+    """
     def get(self, request, user_id):
         logger.info(f"[UserEditView] 管理员 {request.user.username} 编辑用户，user_id: {user_id}")
         try:
@@ -217,6 +256,10 @@ class UserEditView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class UserDeleteView(View):
+    """
+    用户删除视图
+    仅管理员可访问，用于删除用户（禁止删除当前登录的管理员）
+    """
     def get(self, request, user_id):
         logger.info(f"[UserDeleteView] 管理员 {request.user.username} 删除用户，user_id: {user_id}")
         try:
@@ -234,6 +277,10 @@ class UserDeleteView(View):
 
 @method_decorator(login_required, name='dispatch')
 class ChangePasswordView(View):
+    """
+    修改密码视图
+    已登录用户可修改自己的密码
+    """
     def get(self, request):
         logger.info(f"[ChangePasswordView] 用户 {request.user.username} 加载修改密码页面")
         return render(request, 'parameter/change_password.html')

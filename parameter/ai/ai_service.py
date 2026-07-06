@@ -1,3 +1,7 @@
+"""
+AI服务模块
+提供参数表分析、任务书生成、测试用例生成、SQL生成等AI辅助功能
+"""
 import logging
 
 from .ai_client import ai_client
@@ -6,8 +10,22 @@ from parameter.models import ParameterTable, FieldDefinition, Requirement
 logger = logging.getLogger(__name__)
 
 class AIParameterTableAnalyzer:
+    """
+    参数表AI分析器
+    提供参数表统一可行性分析、字段定义规范性检查等功能
+    """
+    
     @staticmethod
     def analyze_unification(table_id):
+        """
+        分析参数表是否适合统一到SIMPLELIST表
+        
+        Args:
+            table_id: 参数表ID
+            
+        Returns:
+            dict: 分析结果，包含评分、原因、建议等
+        """
         logger.info(f"[AIParameterTableAnalyzer] 开始分析参数表统一可行性，table_id: {table_id}")
         
         try:
@@ -53,6 +71,17 @@ class AIParameterTableAnalyzer:
 
     @staticmethod
     def analyze_normalization(table_id):
+        """
+        分析字段定义的规范性
+        
+        检查内容包括：字段命名规范、字段类型与控件类型匹配、长度设置合理性、必填字段标记等
+        
+        Args:
+            table_id: 参数表ID
+            
+        Returns:
+            dict: 分析结果，包含问题列表、错误数、警告数等
+        """
         logger.info(f"[AIParameterTableAnalyzer] 开始分析字段定义规范性，table_id: {table_id}")
         
         try:
@@ -92,8 +121,22 @@ class AIParameterTableAnalyzer:
             return {"success": False, "error": str(e)}
 
 class AIGeneratorService:
+    """
+    AI生成服务
+    提供任务书生成、测试用例生成、SQL生成等功能
+    """
+    
     @staticmethod
     def generate_task_document(requirement_id):
+        """
+        根据需求信息生成任务书文档
+        
+        Args:
+            requirement_id: 需求ID
+            
+        Returns:
+            dict: 生成结果，包含任务书内容、字数等信息
+        """
         logger.info(f"[AIGeneratorService] 开始生成任务书，requirement_id: {requirement_id}")
         
         try:
@@ -151,6 +194,17 @@ class AIGeneratorService:
 
     @staticmethod
     def generate_test_cases(requirement_id):
+        """
+        根据需求生成测试用例
+        
+        生成的测试用例覆盖正常流程、边界条件、异常场景三种类型
+        
+        Args:
+            requirement_id: 需求ID
+            
+        Returns:
+            dict: 生成结果，包含测试用例列表和统计信息
+        """
         logger.info(f"[AIGeneratorService] 开始生成测试用例，requirement_id: {requirement_id}")
         
         try:
@@ -197,6 +251,16 @@ class AIGeneratorService:
 
     @staticmethod
     def generate_sql(table_id, natural_query):
+        """
+        根据自然语言描述生成SQL语句
+        
+        Args:
+            table_id: 参数表ID
+            natural_query: 自然语言查询描述
+            
+        Returns:
+            dict: 生成结果，包含SQL语句和相关信息
+        """
         logger.info(f"[AIGeneratorService] 开始生成SQL，table_id: {table_id}, query: {natural_query[:50]}")
         
         try:

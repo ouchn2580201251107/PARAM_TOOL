@@ -1,3 +1,10 @@
+"""
+初始化管理员账号脚本
+创建系统角色（管理员、业务人员、技术人员、一般人员）和默认管理员账号
+
+使用方法：
+    python init_admin.py
+"""
 import os
 import sys
 import django
@@ -9,6 +16,12 @@ from parameter.models import Role, User
 from django.contrib.auth.hashers import make_password
 
 def init_admin():
+    """
+    初始化角色和管理员账号
+    
+    创建四个系统角色（admin/business/technical/general）
+    创建默认管理员账号 admin/admin123
+    """
     role_choices = [
         ('admin', '管理员', '系统管理员，拥有所有权限'),
         ('business', '业务人员', '负责需求分析和业务管理'),

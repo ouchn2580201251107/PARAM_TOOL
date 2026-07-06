@@ -1,3 +1,7 @@
+"""
+主业务视图模块
+实现参数表管理、元数据管理、需求管理、任务书管理、配置脚本管理、测试管理、Spring Boot代码生成等核心业务功能
+"""
 import json
 import logging
 from datetime import datetime
@@ -14,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def index(request):
+    """
+    首页视图
+    展示系统概览数据，包括参数表、需求、任务书、配置脚本的统计信息
+    """
     logger.info(f"[index] 开始加载首页数据，请求路径: {request.path}")
     try:
         tables = ParameterTable.objects.all()
@@ -47,6 +55,10 @@ def index(request):
 
 @method_decorator(login_required, name='dispatch')
 class ParameterTableListView(View):
+    """
+    参数表列表视图
+    展示所有参数表的业务说明底账，支持按业务领域、状态和名称搜索过滤
+    """
     def get(self, request):
         logger.info(f"[ParameterTableListView] 开始查询参数表清单，请求路径: {request.path}")
         try:
@@ -92,6 +104,10 @@ class ParameterTableListView(View):
 
 @method_decorator(login_required, name='dispatch')
 class ParameterTableDetailView(View):
+    """
+    参数表详情视图
+    展示参数表的详细信息，包括字段定义列表
+    """
     def get(self, request, table_id):
         logger.info(f"[ParameterTableDetailView] 开始查询参数表详情，table_id: {table_id}")
         try:
@@ -134,6 +150,10 @@ class MetadataListView(View):
 
 @method_decorator(role_required(['admin', 'technical']), name='dispatch')
 class MetadataCreateView(View):
+    """
+    元数据创建视图
+    仅管理员和技术人员可访问，用于创建新的元数据配置
+    """
     def get(self, request):
         logger.info(f"[MetadataCreateView] 加载创建元数据页面")
         context = {
@@ -457,6 +477,11 @@ class TaskDocumentExportView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class SpringBootGeneratorView(View):
+    """
+    Spring Boot代码生成器视图
+    仅管理员可访问，根据参数表元数据生成完整的Spring Boot项目代码预览
+    生成内容包括：Entity、DTO、Mapper、Service、ServiceImpl、Controller、Mapper XML等
+    """
     def get(self, request):
         tables = ParameterTable.objects.all()
         context = {
@@ -490,6 +515,11 @@ class SpringBootGeneratorView(View):
 
 @method_decorator(admin_required, name='dispatch')
 class SpringBootDownloadView(View):
+    """
+    Spring Boot代码下载视图
+    仅管理员可访问，将生成的Spring Boot项目代码打包为ZIP文件供下载
+    包含完整的项目结构：pom.xml、Application、各层代码、配置文件等
+    """
     def post(self, request):
         table_id = request.POST.get('table_id')
         package_name = request.POST.get('package_name', 'com.example')
