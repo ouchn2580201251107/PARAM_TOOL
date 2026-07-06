@@ -2,8 +2,9 @@
 主业务视图模块
 实现参数表管理、元数据管理、需求管理、任务书管理、配置脚本管理、测试管理、Spring Boot代码生成等核心业务功能
 """
-import json
 import logging
+import zipfile
+import io
 from datetime import datetime
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -13,6 +14,7 @@ from django.utils.decorators import method_decorator
 
 from .auth_views import login_required, admin_required, role_required
 from .models import ParameterTable, Metadata, FieldDefinition, Requirement, TaskDocument, ConfigScript, IndexIdConfig, TestCase, AutomationTestResult
+from .utils.springboot_generator import SpringBootCodeGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -498,11 +500,20 @@ class SpringBootGeneratorView(View):
             table = ParameterTable.objects.get(id=table_id)
             fields = FieldDefinition.objects.filter(parameter_table=table).order_by('sort_order')
             
+            generator = SpringBootCodeGenerator(table, fields, package_name, module_name)
+            code = generator.generate_all()
+            
             context = {
                 'table': table,
                 'fields': fields,
                 'package_name': package_name,
                 'module_name': module_name,
+                'entity_code': code['entity'],
+                'dto_code': code['dto'],
+                'mapper_code': code['mapper'],
+                'service_code': code['service'],
+                'controller_code': code['controller'],
+                'mapper_xml_code': code['mapper_xml'],
             }
             
             return render(request, 'parameter/springboot_generator.html', context)
@@ -529,33 +540,24 @@ class SpringBootDownloadView(View):
             table = ParameterTable.objects.get(id=table_id)
             fields = FieldDefinition.objects.filter(parameter_table=table).order_by('sort_order')
             
-            entity_code = self._generate_entity(table, fields, package_name, module_name)
-            dto_code = self._generate_dto(table, fields, package_name, module_name)
-            mapper_code = self._generate_mapper(table, package_name, module_name)
-            service_code = self._generate_service(table, fields, package_name, module_name)
-            service_impl_code = self._generate_service_impl(table, fields, package_name, module_name)
-            controller_code = self._generate_controller(table, package_name, module_name)
-            mapper_xml_code = self._generate_mapper_xml(table, fields)
-            pom_code = self._generate_pom(module_name)
-            application_code = self._generate_application(module_name)
-            application_yaml_code = self._generate_application_yaml(package_name, module_name)
+            generator = SpringBootCodeGenerator(table, fields, package_name, module_name)
+            code = generator.generate_all()
             
-            import zipfile
-            import io
-            from django.http import HttpResponse
+            entity_name = table.name.replace('代码表', '')
+            base_path = f'{module_name}/src/main/java/{generator.package_path}/{module_name}'
             
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/entity/{table.name.replace("代码表", "")}.java', entity_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/dto/{table.name.replace("代码表", "")}DTO.java', dto_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/mapper/{table.name.replace("代码表", "")}Mapper.java', mapper_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/service/{table.name.replace("代码表", "")}Service.java', service_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/service/impl/{table.name.replace("代码表", "")}ServiceImpl.java', service_impl_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/controller/{table.name.replace("代码表", "")}Controller.java', controller_code)
-                zf.writestr(f'{module_name}/src/main/resources/mapper/{table.name.replace("代码表", "")}Mapper.xml', mapper_xml_code)
-                zf.writestr(f'{module_name}/pom.xml', pom_code)
-                zf.writestr(f'{module_name}/src/main/java/{package_name.replace(".", "/")}/{module_name.capitalize()}Application.java', application_code)
-                zf.writestr(f'{module_name}/src/main/resources/application.yml', application_yaml_code)
+                zf.writestr(f'{base_path}/entity/{entity_name}.java', code['entity'])
+                zf.writestr(f'{base_path}/dto/{entity_name}DTO.java', code['dto'])
+                zf.writestr(f'{base_path}/mapper/{entity_name}Mapper.java', code['mapper'])
+                zf.writestr(f'{base_path}/service/{entity_name}Service.java', code['service'])
+                zf.writestr(f'{base_path}/service/impl/{entity_name}ServiceImpl.java', code['service_impl'])
+                zf.writestr(f'{base_path}/controller/{entity_name}Controller.java', code['controller'])
+                zf.writestr(f'{module_name}/src/main/resources/mapper/{entity_name}Mapper.xml', code['mapper_xml'])
+                zf.writestr(f'{module_name}/pom.xml', code['pom'])
+                zf.writestr(f'{base_path}/{module_name.capitalize()}Application.java', code['application'])
+                zf.writestr(f'{module_name}/src/main/resources/application.yml', code['application_yaml'])
             
             zip_buffer.seek(0)
             
@@ -566,569 +568,8 @@ class SpringBootDownloadView(View):
         except ParameterTable.DoesNotExist:
             return HttpResponse('参数表不存在', status=400)
 
-    def _generate_entity(self, table, fields, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        field_code = ''
-        
-        for field in fields:
-            java_type = self._get_java_type(field.field_type, field.length)
-            field_name = field.field_name
-            display_name = field.display_name
-            is_required = '@NotBlank' if field.is_required else ''
-            
-            field_code += f"""
-    /**
-     * {display_name}
-     */
-    {is_required}
-    private {java_type} {field_name};
-"""
-        
-        return f"""package {package_name}.{module_name}.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.Date;
-
-/**
- * {table.name}实体类
- * {table.business_description}
- */
-@Entity
-@Table(name = "{table.name.replace('代码表', '').lower()}")
-public class {entity_name} implements Serializable {{
-
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-{field_code}
-    // Getters and Setters
-    public Long getId() {{ return id; }}
-    public void setId(Long id) {{ this.id = id; }}
-{self._generate_getters_setters(fields)}
-}}
-"""
-
-    def _generate_dto(self, table, fields, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        field_code = ''
-        
-        for field in fields:
-            java_type = self._get_java_type(field.field_type, field.length)
-            field_name = field.field_name
-            display_name = field.display_name
-            is_required = '@NotBlank' if field.is_required else ''
-            
-            field_code += f"""
-    /**
-     * {display_name}
-     */
-    {is_required}
-    private {java_type} {field_name};
-"""
-        
-        return f"""package {package_name}.{module_name}.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
-
-/**
- * {table.name}数据传输对象
- */
-@Data
-public class {entity_name}DTO {{
-
-{field_code}
-}}
-"""
-
-    def _generate_mapper(self, table, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        
-        return f"""package {package_name}.{module_name}.mapper;
-
-import {package_name}.{module_name}.entity.{entity_name};
-import org.apache.ibatis.annotations.Mapper;
-import java.util.List;
-
-/**
- * {table.name}Mapper接口
- */
-@Mapper
-public interface {entity_name}Mapper {{
-
-    /**
-     * 根据ID查询
-     */
-    {entity_name} selectById(Long id);
-
-    /**
-     * 查询所有
-     */
-    List<{entity_name}> selectAll();
-
-    /**
-     * 根据条件查询
-     */
-    List<{entity_name}> selectByCondition({entity_name} entity);
-
-    /**
-     * 新增
-     */
-    int insert({entity_name} entity);
-
-    /**
-     * 更新
-     */
-    int updateById({entity_name} entity);
-
-    /**
-     * 删除
-     */
-    int deleteById(Long id);
-}}
-"""
-
-    def _generate_service(self, table, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        
-        return f"""package {package_name}.{module_name}.service;
-
-import {package_name}.{module_name}.dto.{entity_name}DTO;
-import {package_name}.{module_name}.entity.{entity_name};
-import java.util.List;
-
-/**
- * {table.name}Service接口
- */
-public interface {entity_name}Service {{
-
-    /**
-     * 根据ID查询
-     */
-    {entity_name} findById(Long id);
-
-    /**
-     * 查询所有
-     */
-    List<{entity_name}> findAll();
-
-    /**
-     * 根据条件查询
-     */
-    List<{entity_name}> findByCondition({entity_name}DTO dto);
-
-    /**
-     * 新增
-     */
-    {entity_name} create({entity_name}DTO dto);
-
-    /**
-     * 更新
-     */
-    {entity_name} update(Long id, {entity_name}DTO dto);
-
-    /**
-     * 删除
-     */
-    void delete(Long id);
-}}
-"""
-
-    def _generate_service_impl(self, table, fields, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        
-        return f"""package {package_name}.{module_name}.service.impl;
-
-import {package_name}.{module_name}.dto.{entity_name}DTO;
-import {package_name}.{module_name}.entity.{entity_name};
-import {package_name}.{module_name}.mapper.{entity_name}Mapper;
-import {package_name}.{module_name}.service.{entity_name}Service;
-import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-
-/**
- * {table.name}ServiceImpl实现类
- */
-@Service
-@Transactional
-public class {entity_name}ServiceImpl implements {entity_name}Service {{
-
-    private final {entity_name}Mapper {entity_name.lower()}Mapper;
-
-    public {entity_name}ServiceImpl({entity_name}Mapper {entity_name.lower()}Mapper) {{
-        this.{entity_name.lower()}Mapper = {entity_name.lower()}Mapper;
-    }}
-
-    @Override
-    @Transactional(readOnly = true)
-    public {entity_name} findById(Long id) {{
-        return {entity_name.lower()}Mapper.selectById(id);
-    }}
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<{entity_name}> findAll() {{
-        return {entity_name.lower()}Mapper.selectAll();
-    }}
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<{entity_name}> findByCondition({entity_name}DTO dto) {{
-        {entity_name} entity = new {entity_name}();
-        BeanUtils.copyProperties(dto, entity);
-        return {entity_name.lower()}Mapper.selectByCondition(entity);
-    }}
-
-    @Override
-    public {entity_name} create({entity_name}DTO dto) {{
-        {entity_name} entity = new {entity_name}();
-        BeanUtils.copyProperties(dto, entity);
-        {entity_name.lower()}Mapper.insert(entity);
-        return entity;
-    }}
-
-    @Override
-    public {entity_name} update(Long id, {entity_name}DTO dto) {{
-        {entity_name} entity = {entity_name.lower()}Mapper.selectById(id);
-        if (entity == null) {{
-            throw new RuntimeException("{entity_name}不存在");
-        }}
-        BeanUtils.copyProperties(dto, entity);
-        entity.setId(id);
-        {entity_name.lower()}Mapper.updateById(entity);
-        return entity;
-    }}
-
-    @Override
-    public void delete(Long id) {{
-        {entity_name} entity = {entity_name.lower()}Mapper.selectById(id);
-        if (entity == null) {{
-            throw new RuntimeException("{entity_name}不存在");
-        }}
-        {entity_name.lower()}Mapper.deleteById(id);
-    }}
-}}
-"""
-
-    def _generate_controller(self, table, package_name, module_name):
-        entity_name = table.name.replace('代码表', '')
-        api_name = entity_name.lower()
-        
-        return f"""package {package_name}.{module_name}.controller;
-
-import {package_name}.{module_name}.dto.{entity_name}DTO;
-import {package_name}.{module_name}.entity.{entity_name};
-import {package_name}.{module_name}.service.{entity_name}Service;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-
-/**
- * {table.name}Controller控制器
- */
-@RestController
-@RequestMapping("/api/{api_name}")
-public class {entity_name}Controller {{
-
-    private final {entity_name}Service {entity_name.lower()}Service;
-
-    public {entity_name}Controller({entity_name}Service {entity_name.lower()}Service) {{
-        this.{entity_name.lower()}Service = {entity_name.lower()}Service;
-    }}
-
-    /**
-     * 根据ID查询
-     */
-    @GetMapping("/{{id}}")
-    public ResponseEntity<{entity_name}> getById(@PathVariable Long id) {{
-        {entity_name} entity = {entity_name.lower()}Service.findById(id);
-        return ResponseEntity.ok(entity);
-    }}
-
-    /**
-     * 查询所有
-     */
-    @GetMapping
-    public ResponseEntity<List<{entity_name}>> getAll() {{
-        List<{entity_name}> list = {entity_name.lower()}Service.findAll();
-        return ResponseEntity.ok(list);
-    }}
-
-    /**
-     * 根据条件查询
-     */
-    @PostMapping("/search")
-    public ResponseEntity<List<{entity_name}>> search(@RequestBody {entity_name}DTO dto) {{
-        List<{entity_name}> list = {entity_name.lower()}Service.findByCondition(dto);
-        return ResponseEntity.ok(list);
-    }}
-
-    /**
-     * 新增
-     */
-    @PostMapping
-    public ResponseEntity<{entity_name}> create(@Validated @RequestBody {entity_name}DTO dto) {{
-        {entity_name} entity = {entity_name.lower()}Service.create(dto);
-        return ResponseEntity.ok(entity);
-    }}
-
-    /**
-     * 更新
-     */
-    @PutMapping("/{{id}}")
-    public ResponseEntity<{entity_name}> update(@PathVariable Long id, @Validated @RequestBody {entity_name}DTO dto) {{
-        {entity_name} entity = {entity_name.lower()}Service.update(id, dto);
-        return ResponseEntity.ok(entity);
-    }}
-
-    /**
-     * 删除
-     */
-    @DeleteMapping("/{{id}}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {{
-        {entity_name.lower()}Service.delete(id);
-        return ResponseEntity.ok().build();
-    }}
-}}
-"""
-
-    def _generate_mapper_xml(self, table, fields):
-        entity_name = table.name.replace('代码表', '')
-        table_name = table.name.replace('代码表', '').lower()
-        base_colums = ','.join([f.field_name for f in fields])
-        
-        return f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.{table_name}.mapper.{entity_name}Mapper">
-
-    <resultMap id="BaseResultMap" type="{entity_name}">
-        <id column="id" property="id"/>
-{self._generate_result_map(fields)}
-    </resultMap>
-
-    <sql id="Base_Column_List">
-        id, {base_colums}
-    </sql>
-
-    <select id="selectById" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM {table_name}
-        WHERE id = #{{id}}
-    </select>
-
-    <select id="selectAll" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM {table_name}
-        ORDER BY id DESC
-    </select>
-
-    <select id="selectByCondition" resultMap="BaseResultMap" parameterType="{entity_name}">
-        SELECT <include refid="Base_Column_List"/>
-        FROM {table_name}
-        <where>
-{self._generate_where_conditions(fields)}
-        </where>
-        ORDER BY id DESC
-    </select>
-
-    <insert id="insert" parameterType="{entity_name}" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO {table_name} ({base_colums})
-        VALUES ({','.join([f'#{{{f.field_name}}}' for f in fields])})
-    </insert>
-
-    <update id="updateById" parameterType="{entity_name}">
-        UPDATE {table_name}
-        <set>
-{self._generate_set_clause(fields)}
-        </set>
-        WHERE id = #{{id}}
-    </update>
-
-    <delete id="deleteById">
-        DELETE FROM {table_name} WHERE id = #{{id}}
-    </delete>
-
-</mapper>
-"""
-
-    def _generate_pom(self, module_name):
-        return f"""<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.example</groupId>
-    <artifactId>{module_name}</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-
-    <name>{module_name}</name>
-    <description>{module_name} Spring Boot Application</description>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
-        <relativePath/>
-    </parent>
-
-    <properties>
-        <java.version>21</java.version>
-        <mybatis-spring-boot-starter.version>3.0.2</mybatis-spring-boot-starter.version>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>${{mybatis-spring-boot-starter.version}}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-</project>
-"""
-
-    def _generate_application(self, module_name):
-        return f"""package com.example.{module_name};
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-/**
- * {module_name} Spring Boot 启动类
- */
-@SpringBootApplication
-public class {module_name.capitalize()}Application {{
-
-    public static void main(String[] args) {{
-        SpringApplication.run({module_name.capitalize()}Application.class, args);
-    }}
-}}
-"""
-
-    def _generate_application_yaml(self, package_name, module_name):
-        return f"""server:
-  port: 8080
-
-spring:
-  application:
-    name: {module_name}
-  
-  datasource:
-    url: jdbc:mysql://localhost:3306/example_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: admin
-    password: password
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: {package_name}.{module_name}.entity
-
-logging:
-  level:
-    {package_name}.{module_name}.mapper: DEBUG
-"""
-
-    def _get_java_type(self, field_type, length):
-        type_mapping = {
-            'string': 'String',
-            'integer': 'Integer',
-            'decimal': 'BigDecimal',
-            'date': 'Date',
-            'datetime': 'Date',
-            'boolean': 'Boolean',
-            'text': 'String',
-        }
-        return type_mapping.get(field_type, 'String')
-
-    def _generate_getters_setters(self, fields):
-        code = ''
-        for field in fields:
-            java_type = self._get_java_type(field.field_type, field.length)
-            field_name = field.field_name
-            capitalized = field_name[0].upper() + field_name[1:]
-            
-            code += f"""
-    public {java_type} get{capitalized}() {{ return {field_name}; }}
-    public void set{capitalized}({java_type} {field_name}) {{ this.{field_name} = {field_name}; }}"""
-        
-        return code
-
-    def _generate_result_map(self, fields):
-        code = ''
-        for field in fields:
-            code += f"""        <result column="{field.field_name}" property="{field.field_name}"/>\n"""
-        return code
-
-    def _generate_where_conditions(self, fields):
-        code = ''
-        for field in fields:
-            code += f"""            <if test="{field.field_name} != null">AND {field.field_name} = #{{{field.field_name}}}</if>\n"""
-        return code
-
-    def _generate_set_clause(self, fields):
-        code = ''
-        for field in fields:
-            code += f"""            <if test="{field.field_name} != null">{field.field_name} = #{{{field.field_name}}},</if>\n"""
-        return code
-
-
+@method_decorator(admin_required, name='dispatch')
 class SqlManagerView(View):
     def get(self, request):
         logger.info(f"[SqlManagerView] 加载SQL管理器页面，请求路径: {request.path}")
