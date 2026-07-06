@@ -58,17 +58,11 @@ class Metadata(models.Model):
         ('textarea', '文本域'),
     ]
 
-    STORAGE_TYPE_CHOICES = [
-        ('code_only', '仅存储CODE'),
-        ('code_name', '独立存储CODE和NAME'),
-    ]
-
     name = models.CharField(max_length=100, verbose_name='元数据名称')
     field_type = models.CharField(max_length=20, choices=FIELD_TYPE_CHOICES, verbose_name='字段类型')
     length = models.IntegerField(null=True, blank=True, verbose_name='长度')
     decimal_places = models.IntegerField(null=True, blank=True, verbose_name='小数位数')
     control_type = models.CharField(max_length=20, choices=CONTROL_TYPE_CHOICES, verbose_name='前端控件类型')
-    storage_type = models.CharField(max_length=20, choices=STORAGE_TYPE_CHOICES, default='code_only', verbose_name='存储方式')
     default_value = models.CharField(max_length=200, null=True, blank=True, verbose_name='默认值')
     is_required = models.BooleanField(default=False, verbose_name='是否必填')
     validation_rule = models.CharField(max_length=500, null=True, blank=True, verbose_name='校验规则')
@@ -86,7 +80,18 @@ class FieldDefinition(models.Model):
     """
     字段定义模型
     定义参数表中每个字段的详细属性，支持引用元数据或自定义配置
+    
+    存储方式说明：
+    - code_only: 仅存储代码值，适用于业务表引用参数表的场景
+    - code_name: 存储代码和名称，适用于参数表自身存储或需要冗余存储名称的场景
+    - full: 完整存储所有字段，适用于需要保留完整信息的场景
     """
+    
+    STORAGE_TYPE_CHOICES = [
+        ('code_only', '仅存储CODE'),
+        ('code_name', '存储CODE和NAME'),
+        ('full', '完整存储'),
+    ]
     
     parameter_table = models.ForeignKey(ParameterTable, on_delete=models.CASCADE, related_name='fields', verbose_name='所属参数表')
     metadata = models.ForeignKey(Metadata, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='引用元数据')

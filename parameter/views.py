@@ -139,7 +139,6 @@ class MetadataCreateView(View):
         context = {
             'field_types': Metadata.FIELD_TYPE_CHOICES,
             'control_types': Metadata.CONTROL_TYPE_CHOICES,
-            'storage_types': Metadata.STORAGE_TYPE_CHOICES,
         }
         return render(request, 'parameter/metadata_create.html', context)
     
@@ -152,7 +151,6 @@ class MetadataCreateView(View):
                 length=request.POST.get('length') or None,
                 decimal_places=request.POST.get('decimal_places') or None,
                 control_type=request.POST.get('control_type'),
-                storage_type=request.POST.get('storage_type'),
                 default_value=request.POST.get('default_value'),
                 is_required=request.POST.get('is_required') == 'on',
                 validation_rule=request.POST.get('validation_rule'),
@@ -166,7 +164,6 @@ class MetadataCreateView(View):
             context = {
                 'field_types': Metadata.FIELD_TYPE_CHOICES,
                 'control_types': Metadata.CONTROL_TYPE_CHOICES,
-                'storage_types': Metadata.STORAGE_TYPE_CHOICES,
                 'error': str(e),
                 'data': request.POST,
             }
@@ -182,7 +179,6 @@ class MetadataEditView(View):
                 'metadata': metadata,
                 'field_types': Metadata.FIELD_TYPE_CHOICES,
                 'control_types': Metadata.CONTROL_TYPE_CHOICES,
-                'storage_types': Metadata.STORAGE_TYPE_CHOICES,
             }
             return render(request, 'parameter/metadata_edit.html', context)
         except Metadata.DoesNotExist:
@@ -198,7 +194,6 @@ class MetadataEditView(View):
             metadata.length = request.POST.get('length') or None
             metadata.decimal_places = request.POST.get('decimal_places') or None
             metadata.control_type = request.POST.get('control_type')
-            metadata.storage_type = request.POST.get('storage_type')
             metadata.default_value = request.POST.get('default_value')
             metadata.is_required = request.POST.get('is_required') == 'on'
             metadata.validation_rule = request.POST.get('validation_rule')
@@ -216,7 +211,6 @@ class MetadataEditView(View):
                 'metadata': metadata,
                 'field_types': Metadata.FIELD_TYPE_CHOICES,
                 'control_types': Metadata.CONTROL_TYPE_CHOICES,
-                'storage_types': Metadata.STORAGE_TYPE_CHOICES,
                 'error': str(e),
             }
             return render(request, 'parameter/metadata_edit.html', context)

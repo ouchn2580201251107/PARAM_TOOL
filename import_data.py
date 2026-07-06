@@ -52,7 +52,6 @@ def import_metadata():
             length=int(row['length']) if row['length'] else None,
             decimal_places=int(row['decimal_places']) if row['decimal_places'] else None,
             control_type=row['control_type'],
-            storage_type=row['storage_type'],
             default_value=row['default_value'] if row['default_value'] else None,
             is_required=row['is_required'] == 'True',
             validation_rule=row['validation_rule'] if row['validation_rule'] else None,

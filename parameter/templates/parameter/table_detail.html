@@ -61,7 +61,7 @@
                     <td>{{ field.field_type }}</td>
                     <td>{{ field.length|default:'-' }}</td>
                     <td>{{ field.control_type }}</td>
-                    <td>{{ field.storage_type }}</td>
+                    <td>{{ field.get_storage_type_display }}</td>
                     <td>{% if field.is_required == 'True' %}是{% else %}否{% endif %}</td>
                     <td>{% if field.is_visible == 'True' %}是{% else %}否{% endif %}</td>
                     <td>{% if field.is_custom == 'True' %}是{% else %}否{% endif %}</td>
