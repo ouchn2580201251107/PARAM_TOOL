@@ -2,12 +2,15 @@ import logging
 from django.views import View
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 
+from parameter.auth_views import login_required
 from parameter.models import ParameterTable, Requirement
 from .ai_service import AIParameterTableAnalyzer, AIGeneratorService
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(login_required, name='dispatch')
 class AIAnalysisView(View):
     def get(self, request):
         logger.info(f"[AIAnalysisView] 加载AI分析页面")
@@ -20,6 +23,7 @@ class AIAnalysisView(View):
         }
         return render(request, 'parameter/ai_analysis.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AIUnificationAnalysisView(View):
     def post(self, request):
         table_id = request.POST.get('table_id')
@@ -36,6 +40,7 @@ class AIUnificationAnalysisView(View):
         }
         return render(request, 'parameter/ai_analysis.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AINormalizationAnalysisView(View):
     def post(self, request):
         table_id = request.POST.get('table_id')
@@ -52,6 +57,7 @@ class AINormalizationAnalysisView(View):
         }
         return render(request, 'parameter/ai_analysis.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AIGenerationView(View):
     def get(self, request):
         logger.info(f"[AIGenerationView] 加载AI生成页面")
@@ -68,6 +74,7 @@ class AIGenerationView(View):
         }
         return render(request, 'parameter/ai_generation.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AITaskDocumentGenerationView(View):
     def post(self, request):
         requirement_id = request.POST.get('requirement_id')
@@ -86,6 +93,7 @@ class AITaskDocumentGenerationView(View):
         }
         return render(request, 'parameter/ai_generation.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AITestCaseGenerationView(View):
     def post(self, request):
         requirement_id = request.POST.get('requirement_id')
@@ -104,6 +112,7 @@ class AITestCaseGenerationView(View):
         }
         return render(request, 'parameter/ai_generation.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class AISQLGenerationView(View):
     def post(self, request):
         table_id = request.POST.get('table_id')

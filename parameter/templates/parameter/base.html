@@ -7,19 +7,19 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Microsoft YaHei', Arial, sans-serif; background-color: #f5f7fa; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        .header h1 { font-size: 20px; font-weight: 600; }
-        .header .user-info { float: right; font-size: 14px; margin-top: 4px; }
+        .header { background: #094194; color: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; font-weight: 600; margin: 0; }
+        .header .user-info { font-size: 14px; display: flex; align-items: center; gap: 12px; }
         .sidebar { width: 220px; background: #2c3e50; min-height: calc(100vh - 60px); float: left; }
         .sidebar .nav-item { display: block; color: #ecf0f1; padding: 12px 20px; text-decoration: none; border-left: 3px solid transparent; }
-        .sidebar .nav-item:hover, .sidebar .nav-item.active { background: #34495e; border-left-color: #667eea; }
+        .sidebar .nav-item:hover, .sidebar .nav-item.active { background: #34495e; border-left-color: #094194; }
         .sidebar .nav-item i { margin-right: 8px; }
         .main-content { margin-left: 220px; padding: 24px; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
         .card-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
         .btn { display: inline-block; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 14px; cursor: pointer; border: none; }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5a6fd6; }
+        .btn-primary { background: #094194; color: white; }
+        .btn-primary:hover { background: #07357a; }
         .btn-success { background: #27ae60; color: white; }
         .btn-success:hover { background: #229954; }
         .btn-warning { background: #f39c12; color: white; }
@@ -47,7 +47,7 @@
         .form-group label { display: block; font-size: 14px; font-weight: 500; color: #555; margin-bottom: 6px; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
         .form-group textarea { resize: vertical; min-height: 100px; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.2); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #094194; box-shadow: 0 0 0 2px rgba(9,65,148,0.2); }
         .search-box { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 200px; margin-right: 8px; }
         .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; margin-right: 8px; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
@@ -63,11 +63,17 @@
         .content-text { white-space: pre-wrap; font-family: inherit; line-height: 1.8; }
         .clearfix { clear: both; }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="header">
         <h1>参数表配置辅助工具</h1>
-        <div class="user-info">当前用户: 管理员</div>
+        <div class="user-info">
+            <span>当前用户: {{ request.user.real_name|default:request.user.username }}</span>
+            <span class="badge badge-{{ request.user.role.role_code|default:'general' }}">{{ request.user.role.role_name|default:'-' }}</span>
+            <a href="/change-password/" style="color: #fff; text-decoration: underline;">修改密码</a>
+            <a href="/logout/" style="color: #fff; text-decoration: underline;">退出登录</a>
+        </div>
     </div>
     
     <div class="sidebar">
@@ -80,13 +86,18 @@
         <a href="/index-id/" class="nav-item {% if 'index-id' in request.path %}active{% endif %}"><i>🔑</i> INDEXID配置</a>
         <a href="/test-cases/" class="nav-item {% if 'test-cases' in request.path %}active{% endif %}"><i>🧪</i> 测试用例</a>
         <a href="/automation-test/" class="nav-item {% if 'automation-test' in request.path %}active{% endif %}"><i>🤖</i> 自动化测试</a>
+        <a href="/springboot-generator/" class="nav-item {% if 'springboot-generator' in request.path %}active{% endif %}"><i>🚀</i> SpringBoot代码生成</a>
         <a href="/sql-manager/" class="nav-item {% if 'sql-manager' in request.path %}active{% endif %}"><i>📦</i> SQL脚本维护</a>
         <a href="/ai-analysis/" class="nav-item {% if 'ai-analysis' in request.path %}active{% endif %}"><i>🔍</i> AI辅助分析</a>
         <a href="/ai-generation/" class="nav-item {% if 'ai-generation' in request.path %}active{% endif %}"><i>✨</i> AI智能生成</a>
+        {% if request.user.role.role_code == 'admin' %}
+        <a href="/users/" class="nav-item {% if 'users' in request.path %}active{% endif %}"><i>👥</i> 用户管理</a>
+        {% endif %}
     </div>
     
     <div class="main-content">
         {% block content %}{% endblock %}
     </div>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

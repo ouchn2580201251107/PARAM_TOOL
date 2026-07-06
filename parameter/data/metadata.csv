@@ -1,11 +1,17 @@
 id,name,field_type,length,decimal_places,control_type,storage_type,default_value,is_required,validation_rule,description
-1,STRING_50,string,50,,input,code_only,,false,^[a-zA-Z0-9_]{1,50}$,50字符以内的字符串
-2,STRING_100,string,100,,input,code_only,,false,^[a-zA-Z0-9_]{1,100}$,100字符以内的字符串
-3,STRING_200,string,200,,input,code_only,,false,^.{1,200}$,200字符以内的字符串
-4,INTEGER,string,10,,input,code_only,,false,^-?\d{1,10}$,整数类型
-5,DECIMAL_2,decimal,10,2,input,code_only,,false,^-?\d{1,8}(\.\d{1,2})?$ ,小数，保留2位
-6,DATE,date,,,"datepicker",code_only,,false,\d{4}-\d{2}-\d{2},日期格式
-7,DATETIME,datetime,,,"datepicker",code_only,,false,\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},日期时间格式
-8,BOOLEAN,boolean,,,radio,code_only,false,false,,布尔值
-9,TEXT,text,,,textarea,code_only,,false,,长文本类型
-10,STATUS_CODE,string,20,,select,code_name,,true,^[A-Z_]{1,20}$,状态编码，独立存储CODE和NAME
+1,代码编码,string,10,,input,code_only,,True,^[A-Z0-9]{1,10}$,参数代码的编码标识，作为唯一标识符
+2,代码名称,string,100,,input,code_only,,True,^[\u4e00-\u9fa5A-Za-z0-9\s]{1,100}$,参数代码的中文名称，用于业务展示
+3,英文名称,string,200,,input,code_only,,False,^[A-Za-z0-9\s\-_,./]{0,200}$,参数代码的英文名称，用于国际业务
+4,代码简称,string,50,,input,code_only,,False,^[\u4e00-\u9fa5A-Za-z0-9]{0,50}$,参数代码的简称，用于快速识别
+5,代码全称,text,,,"textarea",code_only,,False,,参数代码的全称描述，用于详细说明
+6,英文简称,string,20,,input,code_only,,False,^[A-Z]{2,3}$,国际标准英文简称（如ISO代码），用于系统对接
+7,税率标记,string,2,,input,code_only,,False,^[LH]$,优惠/普通税率标记(L-普通,H-优惠)，关联关税计征
+8,吨税标记,string,2,,input,code_only,,False,^[LH]$,船舶吨税优/普标记(L-普通,H-优惠)，关联船舶吨税计征
+9,是否启用,boolean,,,"radio",code_only,True,False,,参数代码是否启用，控制业务可用性
+10,生效日期,date,,,"datepicker",code_only,,True,,参数代码生效日期，控制时间范围
+11,失效日期,date,,,"datepicker",code_only,,False,,参数代码失效日期，控制时间范围
+12,排序号,integer,,,"input",code_only,0,False,^[0-9]{0,5}$,参数代码排序号，用于列表展示顺序
+13,备注,text,,,"textarea",code_only,,False,,备注信息，用于补充说明
+14,关联参数表,string,50,,input,code_only,,False,,关联的其他参数表ID，用于建立表间关系
+15,关联字段,string,50,,input,code_only,,False,,关联的字段名称，用于建立字段级关系
+16,关联类型,string,20,,input,code_only,,False,^(lookup|constraint|reference)$,关联类型：lookup(查询引用)、constraint(约束)、reference(外键引用)

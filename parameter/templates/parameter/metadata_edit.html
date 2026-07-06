@@ -1,0 +1,71 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑元数据{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📊 编辑元数据</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>元数据名称 *</label>
+                <input type="text" name="name" value="{{ metadata.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>字段类型 *</label>
+                <select name="field_type" required>
+                    {% for code, name in field_types %}
+                    <option value="{{ code }}" {% if metadata.field_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>长度</label>
+                <input type="number" name="length" value="{{ metadata.length|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>小数位数</label>
+                <input type="number" name="decimal_places" value="{{ metadata.decimal_places|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>前端控件类型 *</label>
+                <select name="control_type" required>
+                    {% for code, name in control_types %}
+                    <option value="{{ code }}" {% if metadata.control_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>存储方式</label>
+                <select name="storage_type">
+                    {% for code, name in storage_types %}
+                    <option value="{{ code }}" {% if metadata.storage_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>默认值</label>
+                <input type="text" name="default_value" value="{{ metadata.default_value|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>是否必填</label>
+                <input type="checkbox" name="is_required" {% if metadata.is_required %}checked{% endif %}>
+            </div>
+            <div class="form-group">
+                <label>校验规则</label>
+                <input type="text" name="validation_rule" value="{{ metadata.validation_rule|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea name="description">{{ metadata.description|default:'' }}</textarea>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success">保存</button>
+                <a href="/metadata/" class="btn btn-primary">取消</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

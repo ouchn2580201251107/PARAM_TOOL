@@ -1,8 +1,14 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class ParameterTable(models.Model):
+    """
+    参数表业务说明底账模型
+    用于管理系统中所有参数表的基础信息，包括业务说明、负责人、版本等
+    """
+    
     TABLE_STATUS_CHOICES = [
         ('draft', '草稿'),
         ('active', '启用'),
@@ -27,6 +33,12 @@ class ParameterTable(models.Model):
 
 
 class Metadata(models.Model):
+    """
+    元数据配置模型
+    定义系统中预设的常用元数据类型，包括字段类型、控件类型、校验规则等
+    管理员和技术人员可维护此表
+    """
+    
     FIELD_TYPE_CHOICES = [
         ('string', '字符串'),
         ('integer', '整数'),
@@ -71,6 +83,11 @@ class Metadata(models.Model):
 
 
 class FieldDefinition(models.Model):
+    """
+    字段定义模型
+    定义参数表中每个字段的详细属性，支持引用元数据或自定义配置
+    """
+    
     parameter_table = models.ForeignKey(ParameterTable, on_delete=models.CASCADE, related_name='fields', verbose_name='所属参数表')
     metadata = models.ForeignKey(Metadata, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='引用元数据')
     field_name = models.CharField(max_length=100, verbose_name='字段名')
@@ -97,6 +114,11 @@ class FieldDefinition(models.Model):
 
 
 class Requirement(models.Model):
+    """
+    业务需求登记模型
+    管理系统的业务需求，支持新增、变更、复用三种类型
+    """
+    
     REQUIREMENT_TYPE_CHOICES = [
         ('new', '新增'),
         ('modify', '变更'),
@@ -132,6 +154,11 @@ class Requirement(models.Model):
 
 
 class TaskDocument(models.Model):
+    """
+    任务书管理模型
+    存储根据需求生成的任务书文档，支持Word和PDF格式
+    """
+    
     DOCUMENT_TYPE_CHOICES = [
         ('word', 'Word'),
         ('pdf', 'PDF'),
@@ -154,6 +181,11 @@ class TaskDocument(models.Model):
 
 
 class ConfigScript(models.Model):
+    """
+    配置脚本模型
+    存储根据需求生成的配置脚本，记录脚本的生成、提交、部署状态
+    """
+    
     STATUS_CHOICES = [
         ('generated', '已生成'),
         ('submitted', '已提交'),
@@ -178,6 +210,11 @@ class ConfigScript(models.Model):
 
 
 class IndexIdConfig(models.Model):
+    """
+    INDEXID配置模型
+    管理参数表的INDEXID配置，支持自定义列名、显示字段和校验规则
+    """
+    
     parameter_table = models.ForeignKey(ParameterTable, on_delete=models.CASCADE, verbose_name='关联参数表')
     index_id = models.CharField(max_length=50, unique=True, verbose_name='INDEXID')
     business_name = models.CharField(max_length=200, verbose_name='业务名称')
@@ -196,6 +233,11 @@ class IndexIdConfig(models.Model):
 
 
 class TestCase(models.Model):
+    """
+    测试用例模型
+    管理系统的测试用例，支持正常流程、边界条件、异常场景三种类型
+    """
+    
     CASE_TYPE_CHOICES = [
         ('normal', '正常流程'),
         ('boundary', '边界条件'),
@@ -229,6 +271,11 @@ class TestCase(models.Model):
 
 
 class AutomationTestResult(models.Model):
+    """
+    自动化测试结果模型
+    记录测试用例的自动化执行结果，包括执行状态、错误信息和执行时长
+    """
+    
     STATUS_CHOICES = [
         ('passed', '通过'),
         ('failed', '失败'),
@@ -247,3 +294,64 @@ class AutomationTestResult(models.Model):
 
     def __str__(self):
         return f"{self.test_case.case_no} - {self.status}"
+
+
+class Role(models.Model):
+    """
+    角色模型
+    定义系统的角色类型，包括管理员、业务人员、技术人员、一般人员
+    """
+    
+    ROLE_CHOICES = [
+        ('admin', '管理员'),
+        ('business', '业务人员'),
+        ('technical', '技术人员'),
+        ('general', '一般人员'),
+    ]
+
+    role_code = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True, verbose_name='角色编码')
+    role_name = models.CharField(max_length=100, verbose_name='角色名称')
+    description = models.TextField(null=True, blank=True, verbose_name='角色描述')
+
+    class Meta:
+        verbose_name = '角色'
+        verbose_name_plural = '角色'
+
+    def __str__(self):
+        return self.role_name
+
+
+class User(models.Model):
+    """
+    用户模型
+    系统用户管理，支持密码加密存储和角色分配
+    """
+    
+    username = models.CharField(max_length=100, unique=True, verbose_name='用户名')
+    password = models.CharField(max_length=255, verbose_name='密码')
+    real_name = models.CharField(max_length=100, verbose_name='真实姓名')
+    email = models.EmailField(null=True, blank=True, verbose_name='邮箱')
+    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name='手机号')
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, verbose_name='角色')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
+    class Meta:
+        verbose_name = '用户'
+        verbose_name_plural = '用户'
+
+    def __str__(self):
+        return self.username
+
+    def set_password(self, raw_password):
+        """
+        设置密码，使用Django内置哈希函数加密存储
+        """
+        self.password = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        """
+        验证密码，比对原始密码与存储的哈希值
+        """
+        return check_password(raw_password, self.password)

@@ -1,0 +1,54 @@
+{% extends 'parameter/base.html' %}
+
+{% block content %}
+<div class="page-header">
+    <h2>编辑用户</h2>
+    <p>修改用户信息</p>
+</div>
+
+<div class="content-section">
+    <form method="post" class="form-horizontal">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" value="{{ user.username }}" class="form-control" disabled>
+        </div>
+        
+        <div class="form-group">
+            <label>真实姓名</label>
+            <input type="text" name="real_name" class="form-control" value="{{ user.real_name }}" placeholder="请输入真实姓名">
+        </div>
+        
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" name="email" class="form-control" value="{{ user.email|default:'' }}" placeholder="请输入邮箱地址">
+        </div>
+        
+        <div class="form-group">
+            <label>手机号</label>
+            <input type="tel" name="phone" class="form-control" value="{{ user.phone|default:'' }}" placeholder="请输入手机号">
+        </div>
+        
+        <div class="form-group">
+            <label>角色</label>
+            <select name="role" class="form-control">
+                {% for role in roles %}
+                <option value="{{ role.id }}" {% if user.role.id == role.id %}selected{% endif %}>{{ role.role_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}>
+                启用状态
+            </label>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存修改</button>
+            <a href="/users/" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

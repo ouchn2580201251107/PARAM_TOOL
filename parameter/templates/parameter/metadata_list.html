@@ -5,6 +5,11 @@
 {% block content %}
     <div class="card">
         <div class="card-title">📊 预设常用元数据</div>
+        {% if is_editable %}
+        <div style="margin-bottom: 16px;">
+            <a href="/metadata/create/" class="btn btn-success">+ 新增元数据</a>
+        </div>
+        {% endif %}
         <table class="table">
             <thead>
                 <tr>
@@ -17,23 +22,32 @@
                     <th>必填</th>
                     <th>校验规则</th>
                     <th>描述</th>
+                    {% if is_editable %}
+                    <th>操作</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for meta in metadata_list %}
                 <tr>
                     <td>{{ meta.name }}</td>
-                    <td>{{ meta.field_type }}</td>
+                    <td>{{ meta.get_field_type_display }}</td>
                     <td>{{ meta.length|default:'-' }}</td>
                     <td>{{ meta.decimal_places|default:'-' }}</td>
-                    <td>{{ meta.control_type }}</td>
-                    <td>{{ meta.storage_type }}</td>
-                    <td>{% if meta.is_required == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{{ meta.get_control_type_display }}</td>
+                    <td>{{ meta.get_storage_type_display }}</td>
+                    <td>{% if meta.is_required %}是{% else %}否{% endif %}</td>
                     <td>{{ meta.validation_rule|default:'-' }}</td>
                     <td>{{ meta.description|default:'-' }}</td>
+                    {% if is_editable %}
+                    <td>
+                        <a href="/metadata/edit/{{ meta.id }}/" class="btn btn-primary btn-sm">编辑</a>
+                        <a href="/metadata/delete/{{ meta.id }}/" class="btn btn-danger btn-sm" onclick="return confirm('确定删除该元数据？')">删除</a>
+                    </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
-                <tr><td colspan="9" style="text-align: center;">暂无元数据配置</td></tr>
+                <tr><td colspan="{% if is_editable %}10{% else %}9{% endif %}" style="text-align: center;">暂无元数据配置</td></tr>
                 {% endfor %}
             </tbody>
         </table>

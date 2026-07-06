@@ -1,108 +1,79 @@
 {% extends 'parameter/base.html' %}
 
-{% block content %}
-<div class="page-header">
-    <h2>SQL脚本维护</h2>
-    <p>执行SQL查询和维护数据库</p>
-</div>
+{% block title %}SQL脚本维护{% endblock %}
 
-<div class="content-section">
-    <div class="section-header">
-        <h3>执行SQL语句</h3>
-    </div>
-    
-    {% if success %}
-    <div class="success-message">{{ success }}</div>
-    {% endif %}
-    
-    {% if error %}
-    <div class="error-message">{{ error }}</div>
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label>SQL语句</label>
-            <textarea name="query" rows="8" class="form-control" placeholder="输入SQL语句，如：SELECT * FROM parameter_parametertable">{{ query }}</textarea>
-            <small>支持SELECT查询和INSERT/UPDATE/DELETE操作</small>
-        </div>
-        <button type="submit" class="btn btn-primary">执行</button>
-    </form>
-    
-    {% if results %}
-    <div class="table-section">
-        <h3>查询结果</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    {% for col in columns %}
-                    <th>{{ col }}</th>
+{% block content %}
+    <div class="card">
+        <div class="card-title">📦 SQL脚本维护</div>
+        
+        {% if success %}
+        <div style="color: #27ae60; margin-bottom: 16px;">{{ success }}</div>
+        {% endif %}
+        
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>SQL语句</label>
+                <textarea name="query" rows="8" class="form-control" placeholder="输入SQL语句，如：SELECT * FROM parameter_parametertable">{{ query }}</textarea>
+                <small>支持SELECT查询和INSERT/UPDATE/DELETE操作</small>
+            </div>
+            <button type="submit" class="btn btn-primary">执行</button>
+        </form>
+        
+        {% if results %}
+        <div style="margin-top: 24px;">
+            <div class="card-title">查询结果</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        {% for col in columns %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results %}
+                    <tr>
+                        {% for cell in row %}
+                        <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in results %}
-                <tr>
-                    {% for cell in row %}
-                    <td>{{ cell }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-    
-    <div class="section-header">
-        <h3>常用SQL示例</h3>
-    </div>
-    
-    <div class="sql-examples">
-        <div class="example-item">
-            <strong>查询参数表清单:</strong>
-            <code>SELECT * FROM parameter_parametertable</code>
+                </tbody>
+            </table>
         </div>
-        <div class="example-item">
-            <strong>查询需求统计:</strong>
-            <code>SELECT status, COUNT(*) FROM parameter_requirement GROUP BY status</code>
-        </div>
-        <div class="example-item">
-            <strong>查询测试用例:</strong>
-            <code>SELECT * FROM parameter_testcase WHERE automated = 1</code>
-        </div>
-        <div class="example-item">
-            <strong>更新参数表状态:</strong>
-            <code>UPDATE parameter_parametertable SET status = 'active' WHERE id = 1</code>
+        {% endif %}
+        
+        <div style="margin-top: 24px;">
+            <div class="card-title">常用SQL示例</div>
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
+                <div style="margin-bottom: 12px;">
+                    <strong>查询参数表清单:</strong>
+                    <code style="display: block; margin-top: 4px; padding: 8px; background: #2d2d2d; color: #f8f8f2; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto;">SELECT * FROM parameter_parametertable</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>查询需求统计:</strong>
+                    <code style="display: block; margin-top: 4px; padding: 8px; background: #2d2d2d; color: #f8f8f2; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto;">SELECT status, COUNT(*) FROM parameter_requirement GROUP BY status</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>查询测试用例:</strong>
+                    <code style="display: block; margin-top: 4px; padding: 8px; background: #2d2d2d; color: #f8f8f2; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto;">SELECT * FROM parameter_testcase WHERE automated = 1</code>
+                </div>
+                <div>
+                    <strong>更新参数表状态:</strong>
+                    <code style="display: block; margin-top: 4px; padding: 8px; background: #2d2d2d; color: #f8f8f2; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto;">UPDATE parameter_parametertable SET status = 'active' WHERE id = 1</code>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-    .sql-examples {
-        background: #f8f9fa;
-        padding: 16px;
-        border-radius: 8px;
-        margin-top: 16px;
-    }
-    .example-item {
-        margin-bottom: 12px;
-        padding: 8px;
-        background: white;
-        border-radius: 4px;
-    }
-    .example-item code {
-        display: block;
-        margin-top: 4px;
-        padding: 8px;
-        background: #2d2d2d;
-        color: #f8f8f2;
-        border-radius: 4px;
-        font-family: Consolas, monospace;
-        font-size: 13px;
-        overflow-x: auto;
-    }
     textarea.form-control {
         font-family: Consolas, monospace;
         font-size: 13px;

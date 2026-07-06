@@ -1,0 +1,73 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}创建元数据{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">📊 创建元数据</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>元数据名称 *</label>
+                <input type="text" name="name" value="{{ data.name|default:'' }}" required placeholder="请输入元数据名称">
+            </div>
+            <div class="form-group">
+                <label>字段类型 *</label>
+                <select name="field_type" required>
+                    <option value="">请选择字段类型</option>
+                    {% for code, name in field_types %}
+                    <option value="{{ code }}" {% if data.field_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>长度</label>
+                <input type="number" name="length" value="{{ data.length|default:'' }}" placeholder="请输入长度">
+            </div>
+            <div class="form-group">
+                <label>小数位数</label>
+                <input type="number" name="decimal_places" value="{{ data.decimal_places|default:'' }}" placeholder="请输入小数位数">
+            </div>
+            <div class="form-group">
+                <label>前端控件类型 *</label>
+                <select name="control_type" required>
+                    <option value="">请选择前端控件类型</option>
+                    {% for code, name in control_types %}
+                    <option value="{{ code }}" {% if data.control_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>存储方式</label>
+                <select name="storage_type">
+                    {% for code, name in storage_types %}
+                    <option value="{{ code }}" {% if data.storage_type == code or forloop.first %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>默认值</label>
+                <input type="text" name="default_value" value="{{ data.default_value|default:'' }}" placeholder="请输入默认值">
+            </div>
+            <div class="form-group">
+                <label>是否必填</label>
+                <input type="checkbox" name="is_required" {% if data.is_required == 'on' %}checked{% endif %}>
+            </div>
+            <div class="form-group">
+                <label>校验规则</label>
+                <input type="text" name="validation_rule" value="{{ data.validation_rule|default:'' }}" placeholder="请输入校验规则">
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea name="description" placeholder="请输入描述">{{ data.description|default:'' }}</textarea>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success">创建</button>
+                <a href="/metadata/" class="btn btn-primary">取消</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

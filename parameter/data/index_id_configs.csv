@@ -1,4 +1,4 @@
 id,parameter_table_id,index_id,business_name,business_description,custom_column_names,display_fields,validation_rules,created_at
-1,4,REGION_A,业务A地区信息,业务A专用地区信息配置,"{""REGION_CODE"":""地区编码"",""REGION_NAME"":""地区名称""}","[""REGION_CODE"",""REGION_NAME"",""REGION_LEVEL""]","{""REGION_CODE"":""必填，长度1-100"",""REGION_NAME"":""必填，长度1-200""}",2024-06-05 11:00:00
-2,4,REGION_B,业务B地区信息,业务B专用地区信息配置,"{""REGION_CODE"":""区域编码"",""REGION_NAME"":""区域名称""}","[""REGION_CODE"",""REGION_NAME""]","{""REGION_CODE"":""必填"",""REGION_NAME"":""必填""}",2024-06-10 14:00:00
-3,10,DICT_A,业务A数据字典,业务A专用数据字典配置,"{""DICT_CODE"":""编码"",""DICT_NAME"":""名称"",""DICT_VALUE"":""值""}","[""DICT_CODE"",""DICT_NAME"",""DICT_VALUE"",""DICT_DESC""]","{""DICT_CODE"":""必填，大写字母下划线"",""DICT_NAME"":""必填""}",2024-06-15 09:00:00
+1,1,CusWrap,包装种类主索引,包装种类代码表的主索引配置,"{""package_code"":""包装种类代码"",""package_name"":""包装种类名称""}","[""package_code"",""package_name"",""is_active""]","{""package_code"":""^[0-9]{1,4}$""}",2026-01-15 10:00:00
+2,3,CusTrade,监管方式主索引,监管方式代码表的主索引配置,"{""trade_code"":""监管方式代码"",""trade_short_name"":""监管方式简称""}","[""trade_code"",""trade_short_name"",""trade_full_name""]","{""trade_code"":""^[0-9]{4}$""}",2026-03-10 11:30:00
+3,5,CusCountry,国别地区主索引,国别地区代码表的主索引配置,"{""country_code"":""国家地区代码"",""country_english_short"":""英文简称"",""country_name"":""中文名称""}","[""country_code"",""country_english_short"",""country_name"",""tax_rate_mark""]","{""country_code"":""^[0-9]{3}$"",""country_english_short"":""^[A-Z]{3}$""}",2026-04-01 08:00:00

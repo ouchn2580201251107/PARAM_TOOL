@@ -1,0 +1,159 @@
+{% extends 'parameter/base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">🚀 Spring Boot 代码自动生成器</div>
+    
+    <form method="post" action="/springboot-generator/">
+        {% csrf_token %}
+        <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+            <div>
+                <label>选择参数表 *</label>
+                <select name="table_id" required>
+                    <option value="">请选择参数表</option>
+                    {% for table in tables %}
+                    <option value="{{ table.id }}" {% if table.id == request.POST.table_id %}selected{% endif %}>{{ table.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>包名</label>
+                <input type="text" name="package_name" value="{{ package_name|default:'com.example' }}" placeholder="com.example">
+            </div>
+            <div>
+                <label>模块名</label>
+                <input type="text" name="module_name" value="{{ module_name|default:'demo' }}" placeholder="demo">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary">生成代码</button>
+            </div>
+        </div>
+    </form>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    {% if table %}
+    <div style="margin-top: 24px;">
+        <h3 style="margin-bottom: 16px;">生成结果预览</h3>
+        
+        <form method="post" action="/springboot-download/">
+            {% csrf_token %}
+            <input type="hidden" name="table_id" value="{{ table.id }}">
+            <input type="hidden" name="package_name" value="{{ package_name }}">
+            <input type="hidden" name="module_name" value="{{ module_name }}">
+            
+            <button type="submit" class="btn btn-success" style="margin-bottom: 16px;">📦 下载完整代码包</button>
+        </form>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('entity')">Entity</button>
+            <button class="tab-btn" onclick="showTab('dto')">DTO</button>
+            <button class="tab-btn" onclick="showTab('mapper')">Mapper</button>
+            <button class="tab-btn" onclick="showTab('service')">Service</button>
+            <button class="tab-btn" onclick="showTab('controller')">Controller</button>
+            <button class="tab-btn" onclick="showTab('xml')">Mapper XML</button>
+        </div>
+
+        <div class="tab-content">
+            <div id="entity" class="tab-pane active">
+                <pre><code>{{ entity_code }}</code></pre>
+            </div>
+            <div id="dto" class="tab-pane">
+                <pre><code>{{ dto_code }}</code></pre>
+            </div>
+            <div id="mapper" class="tab-pane">
+                <pre><code>{{ mapper_code }}</code></pre>
+            </div>
+            <div id="service" class="tab-pane">
+                <pre><code>{{ service_code }}</code></pre>
+            </div>
+            <div id="controller" class="tab-pane">
+                <pre><code>{{ controller_code }}</code></pre>
+            </div>
+            <div id="xml" class="tab-pane">
+                <pre><code>{{ mapper_xml_code }}</code></pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 8px;
+    }
+    
+    .tab-btn {
+        padding: 8px 16px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+        border-radius: 4px 4px 0 0;
+        transition: all 0.3s;
+    }
+    
+    .tab-btn:hover {
+        background: #f0f0f0;
+    }
+    
+    .tab-btn.active {
+        background: #094194;
+        color: white;
+    }
+    
+    .tab-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 16px;
+    }
+    
+    .tab-pane {
+        display: none;
+    }
+    
+    .tab-pane.active {
+        display: block;
+    }
+    
+    pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.6;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    code {
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-pane').forEach(function(pane) {
+            pane.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+    }
+</script>
+{% endblock %}
