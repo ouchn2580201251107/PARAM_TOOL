@@ -5,7 +5,7 @@
 {% block content %}
     {% if requirement %}
     <div class="card">
-        <div class="card-title">📝 需求详情 - {{ requirement.requirement_no }}</div>
+        <div class="card-title"><i class="fas fa-pencil-alt"></i> 需求详情 - {{ requirement.requirement_no }}</div>
         <div class="detail-info">
             <span class="label">需求编号：</span><span class="value">{{ requirement.requirement_no }}</span>
         </div>
@@ -46,11 +46,14 @@
         </div>
         <div style="margin-top: 16px;">
             <a href="/requirements/" class="btn btn-primary">返回列表</a>
+            {% if is_business %}
+            <a href="/requirements/{{ requirement.id }}/fields/" class="btn btn-info btn-sm">字段配置</a>
+            {% endif %}
         </div>
     </div>
 
     <div class="card">
-        <div class="card-title">📄 关联任务书</div>
+        <div class="card-title"><i class="fas fa-file-alt"></i> 关联任务书</div>
         {% if documents %}
         <table class="table">
             <thead>
@@ -84,7 +87,7 @@
     </div>
 
     <div class="card">
-        <div class="card-title">⚙️ 关联配置脚本</div>
+        <div class="card-title"><i class="fas fa-cog"></i> 关联配置脚本</div>
         {% if scripts %}
         <table class="table">
             <thead>
@@ -114,7 +117,7 @@
     </div>
 
     <div class="card">
-        <div class="card-title">🧪 关联测试用例</div>
+        <div class="card-title"><i class="fas fa-flask"></i> 关联测试用例</div>
         {% if test_cases %}
         <table class="table">
             <thead>

@@ -1,0 +1,32 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}导入反馈ZIP{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-download"></i> 业务人员导入技术反馈ZIP</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>选择反馈ZIP文件 *</label>
+                <input type="file" name="zip_file" accept=".zip" required>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">导入查看</button>
+                <a href="/requirements/" class="btn btn-secondary">返回列表</a>
+            </div>
+        </form>
+        <div style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+            <strong>说明：</strong>
+            <ul>
+                <li>请上传技术人员反馈的ZIP文件（文件名格式：requirements_datetime_response_datetime.zip）</li>
+                <li>系统会验证version_hash确保版本匹配</li>
+                <li>导入后可以查看技术人员的调整内容和备注</li>
+                <li>修改的字段会高亮显示，方便业务人员确认</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}

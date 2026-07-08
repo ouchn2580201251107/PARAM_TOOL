@@ -1,0 +1,32 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}创建INDEXID配置{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-key"></i> 创建INDEXID配置</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>INDEXID *</label>
+                <input type="text" name="index_id" value="{{ data.index_id|default:'' }}" required placeholder="请输入INDEXID，如archTech">
+                <small style="color: #888;">物理表名将根据INDEXID自动生成，规则：根据大小写区分词并增加下划线，转换为大写（示例：archTech -> ARCH_TECH）</small>
+            </div>
+            <div class="form-group">
+                <label>业务名称 *</label>
+                <input type="text" name="business_name" value="{{ data.business_name|default:'' }}" required placeholder="请输入业务名称">
+            </div>
+            <div class="form-group">
+                <label>业务说明</label>
+                <textarea name="business_description" placeholder="请输入业务说明">{{ data.business_description|default:'' }}</textarea>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success">创建</button>
+                <a href="/index-id/" class="btn btn-primary">取消</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

@@ -2,79 +2,61 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-title">🚀 Spring Boot 代码自动生成器</div>
+    <div class="card-title"><i class="fas fa-code"></i> 代码生成</div>
     
-    <form method="post" action="/springboot-generator/">
+    <form method="post" action="/generator/">
         {% csrf_token %}
-        <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
-            <div>
-                <label>选择参数表 *</label>
-                <select name="table_id" required>
-                    <option value="">请选择参数表</option>
-                    {% for table in tables %}
-                    <option value="{{ table.id }}" {% if table.id == request.POST.table_id %}selected{% endif %}>{{ table.name }}</option>
-                    {% endfor %}
-                </select>
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label>选择参数表 <span style="color: #e74c3c;">*</span></label>
+                <div class="custom-select-wrapper">
+                    <select name="tables" multiple required class="custom-select">
+                        {% for table in tables %}
+                        <option value="{{ table.id }}" {% if table.id|stringformat:"s" in selected_tables %}selected{% endif %}>{{ table.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="select-hint">按住 Ctrl 键可多选</div>
+                </div>
             </div>
-            <div>
+            <div class="form-group" style="width: 280px;">
                 <label>包名</label>
                 <input type="text" name="package_name" value="{{ package_name|default:'com.example' }}" placeholder="com.example">
             </div>
-            <div>
+            <div class="form-group" style="width: 200px;">
                 <label>模块名</label>
                 <input type="text" name="module_name" value="{{ module_name|default:'demo' }}" placeholder="demo">
             </div>
-            <div style="display: flex; align-items: flex-end;">
-                <button type="submit" class="btn btn-primary">生成代码</button>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-code"></i> 生成代码</button>
             </div>
         </div>
     </form>
 
     {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
+    <div style="color: #e74c3c; margin-bottom: 16px; padding: 12px; background: #fef5f5; border-radius: 4px;">{{ error }}</div>
     {% endif %}
 
-    {% if table %}
+    {% if files %}
     <div style="margin-top: 24px;">
         <h3 style="margin-bottom: 16px;">生成结果预览</h3>
         
-        <form method="post" action="/springboot-download/">
+        <form method="get" action="/generator/download/">
             {% csrf_token %}
-            <input type="hidden" name="table_id" value="{{ table.id }}">
-            <input type="hidden" name="package_name" value="{{ package_name }}">
-            <input type="hidden" name="module_name" value="{{ module_name }}">
-            
-            <button type="submit" class="btn btn-success" style="margin-bottom: 16px;">📦 下载完整代码包</button>
+            <button type="submit" class="btn btn-success" style="margin-bottom: 16px;"><i class="fas fa-box"></i> 下载完整代码包</button>
         </form>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('entity')">Entity</button>
-            <button class="tab-btn" onclick="showTab('dto')">DTO</button>
-            <button class="tab-btn" onclick="showTab('mapper')">Mapper</button>
-            <button class="tab-btn" onclick="showTab('service')">Service</button>
-            <button class="tab-btn" onclick="showTab('controller')">Controller</button>
-            <button class="tab-btn" onclick="showTab('xml')">Mapper XML</button>
+            {% for file_name, content in files.items %}
+            <button class="tab-btn {% if forloop.first %}active{% endif %}" onclick="showTab('tab-{{ forloop.counter }}')">{{ file_name }}</button>
+            {% endfor %}
         </div>
 
         <div class="tab-content">
-            <div id="entity" class="tab-pane active">
-                <pre><code>{{ entity_code }}</code></pre>
+            {% for file_name, content in files.items %}
+            <div id="tab-{{ forloop.counter }}" class="tab-pane {% if forloop.first %}active{% endif %}">
+                <pre><code>{{ content }}</code></pre>
             </div>
-            <div id="dto" class="tab-pane">
-                <pre><code>{{ dto_code }}</code></pre>
-            </div>
-            <div id="mapper" class="tab-pane">
-                <pre><code>{{ mapper_code }}</code></pre>
-            </div>
-            <div id="service" class="tab-pane">
-                <pre><code>{{ service_code }}</code></pre>
-            </div>
-            <div id="controller" class="tab-pane">
-                <pre><code>{{ controller_code }}</code></pre>
-            </div>
-            <div id="xml" class="tab-pane">
-                <pre><code>{{ mapper_xml_code }}</code></pre>
-            </div>
+            {% endfor %}
         </div>
     </div>
     {% endif %}
@@ -83,12 +65,68 @@
 
 {% block extra_css %}
 <style>
+    .form-row {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+    
+    .custom-select-wrapper {
+        position: relative;
+    }
+    
+    .custom-select {
+        width: 100%;
+        height: 180px;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        background-color: white;
+        color: #333;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s;
+        appearance: none;
+    }
+    
+    .custom-select:focus {
+        border-color: #094194;
+        box-shadow: 0 0 0 3px rgba(9, 65, 148, 0.1);
+    }
+    
+    .custom-select option {
+        padding: 8px 12px;
+        font-size: 14px;
+        background-color: white;
+        color: #333;
+    }
+    
+    .custom-select option:hover,
+    .custom-select option:focus {
+        background-color: #e8f0fe;
+    }
+    
+    .custom-select option:checked {
+        background-color: #094194;
+        color: white;
+    }
+    
+    .select-hint {
+        font-size: 12px;
+        color: #888;
+        margin-top: 6px;
+    }
+    
     .tabs {
         display: flex;
         gap: 8px;
         margin-bottom: 16px;
         border-bottom: 2px solid #eee;
         padding-bottom: 8px;
+        flex-wrap: wrap;
     }
     
     .tab-btn {

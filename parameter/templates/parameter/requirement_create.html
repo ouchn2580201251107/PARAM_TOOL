@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title">📝 业务需求登记 - 新增需求</div>
+        <div class="card-title"><i class="fas fa-pencil-alt"></i> 业务需求登记 - 新增需求</div>
         <form method="post" action="/requirements/create/">
             {% csrf_token %}
             <div class="form-group">

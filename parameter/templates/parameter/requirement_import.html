@@ -1,0 +1,32 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}导入需求ZIP{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-upload"></i> 技术人员导入需求ZIP</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>选择ZIP文件 *</label>
+                <input type="file" name="zip_file" accept=".zip" required>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">导入</button>
+                <a href="/requirements/" class="btn btn-secondary">返回列表</a>
+            </div>
+        </form>
+        <div style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+            <strong>说明：</strong>
+            <ul>
+                <li>请上传业务人员导出的ZIP文件（文件名格式：requirements_datetime.zip）</li>
+                <li>系统会验证version_hash确保版本匹配</li>
+                <li>导入后可以对需求内容进行编辑，修改的字段会高亮标记</li>
+                <li>每一次导入的内容相互隔离，可独立导出反馈给业务人员</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}

@@ -4,7 +4,14 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title">📋 参数表业务说明底账管理</div>
+        <div class="card-title"><i class="fas fa-list-alt"></i> 参数表业务说明底账管理</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            {% if is_editable %}
+            <a href="/tables/create/" class="btn btn-success">新增</a>
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+            {% endif %}
+        </div>
         <div style="margin-bottom: 16px;">
             <input type="text" class="search-box" placeholder="搜索参数表名称或说明" value="{{ search_name }}" onkeyup="if(event.keyCode==13) search()">
             <select class="filter-select" onchange="filter()">
@@ -24,11 +31,14 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
                     <th>参数表名称</th>
                     <th>业务说明</th>
                     <th>业务领域</th>
                     <th>负责人</th>
                     <th>状态</th>
+                    <th>类型</th>
                     <th>版本</th>
                     <th>最后更新</th>
                     <th>操作</th>
@@ -37,11 +47,20 @@
             <tbody>
                 {% for table in tables %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ table.id }}" {% if table.is_simple %}disabled{% endif %}></td>
                     <td><a href="/tables/{{ table.id }}/">{{ table.name }}</a></td>
                     <td>{{ table.business_description|truncatechars:50 }}</td>
                     <td>{{ table.domain }}</td>
                     <td>{{ table.owner }}</td>
-                    <td><span class="badge badge-{{ table.status }}">{{ table.status }}</span></td>
+                    <td><span class="badge badge-{{ table.status }}">{{ table.get_status_display }}</span></td>
+                    <td>
+                        {% if table.is_simple %}
+                        <span class="badge badge-warning">S</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
                     <td>V{{ table.version }}</td>
                     <td>{{ table.updated_at }}</td>
                     <td>
@@ -49,7 +68,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" style="text-align: center;">暂无参数表</td></tr>
+                <tr><td colspan="11" style="text-align: center;">暂无参数表</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -65,6 +84,49 @@
         }
         function filter() {
             search();
+        }
+
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('.row-select');
+            var selectAll = document.getElementById('select-all');
+            checkboxes.forEach(function(checkbox) {
+                if (!checkbox.disabled) {
+                    checkbox.checked = selectAll.checked;
+                }
+            });
+        }
+
+        function getSelectedIds() {
+            var checkboxes = document.querySelectorAll('.row-select:checked');
+            var ids = [];
+            checkboxes.forEach(function(checkbox) {
+                ids.push(checkbox.value);
+            });
+            return ids;
+        }
+
+        function editSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 1) {
+                window.location.href = '/tables/edit/' + ids[0] + '/';
+            } else if (ids.length === 0) {
+                alert('请选择一条记录进行修改');
+            } else {
+                alert('只能选择一条记录进行修改');
+            }
+        }
+
+        function deleteSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+                ids.forEach(function(id) {
+                    window.location.href = '/tables/delete/' + id + '/';
+                });
+            }
         }
     </script>
 {% endblock %}

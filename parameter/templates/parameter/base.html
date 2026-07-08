@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>参数表配置辅助工具 - {% block title %}首页{% endblock %}</title>
+    <link rel="stylesheet" href="/static/resources/fontawesome/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Microsoft YaHei', Arial, sans-serif; background-color: #f5f7fa; }
@@ -27,6 +28,10 @@
         .btn-danger { background: #e74c3c; color: white; }
         .btn-danger:hover { background: #c0392b; }
         .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-info:hover { background: #138496; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
         .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         .table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         .table th { background: #f8f9fa; font-weight: 600; color: #555; }
@@ -77,21 +82,21 @@
     </div>
     
     <div class="sidebar">
-        <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}"><i>🏠</i> 首页</a>
-        <a href="/tables/" class="nav-item {% if 'tables' in request.path %}active{% endif %}"><i>📋</i> 参数表清单</a>
-        <a href="/metadata/" class="nav-item {% if 'metadata' in request.path %}active{% endif %}"><i>📊</i> 元数据管理</a>
-        <a href="/requirements/" class="nav-item {% if 'requirements' in request.path %}active{% endif %}"><i>📝</i> 需求登记</a>
-        <a href="/task-documents/" class="nav-item {% if 'task-documents' in request.path %}active{% endif %}"><i>📄</i> 任务书管理</a>
-        <a href="/config-scripts/" class="nav-item {% if 'config-scripts' in request.path %}active{% endif %}"><i>⚙️</i> 配置脚本</a>
-        <a href="/index-id/" class="nav-item {% if 'index-id' in request.path %}active{% endif %}"><i>🔑</i> INDEXID配置</a>
-        <a href="/test-cases/" class="nav-item {% if 'test-cases' in request.path %}active{% endif %}"><i>🧪</i> 测试用例</a>
-        <a href="/automation-test/" class="nav-item {% if 'automation-test' in request.path %}active{% endif %}"><i>🤖</i> 自动化测试</a>
-        <a href="/springboot-generator/" class="nav-item {% if 'springboot-generator' in request.path %}active{% endif %}"><i>🚀</i> SpringBoot代码生成</a>
-        <a href="/sql-manager/" class="nav-item {% if 'sql-manager' in request.path %}active{% endif %}"><i>📦</i> SQL脚本维护</a>
-        <a href="/ai-analysis/" class="nav-item {% if 'ai-analysis' in request.path %}active{% endif %}"><i>🔍</i> AI辅助分析</a>
-        <a href="/ai-generation/" class="nav-item {% if 'ai-generation' in request.path %}active{% endif %}"><i>✨</i> AI智能生成</a>
+        <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}"><i class="fas fa-home"></i> 首页</a>
+        <a href="/tables/" class="nav-item {% if 'tables' in request.path %}active{% endif %}"><i class="fas fa-list-alt"></i> 参数表清单</a>
+        <a href="/metadata/" class="nav-item {% if 'metadata' in request.path %}active{% endif %}"><i class="fas fa-chart-bar"></i> 元数据管理</a>
+        <a href="/requirements/" class="nav-item {% if 'requirements' in request.path %}active{% endif %}"><i class="fas fa-pencil-alt"></i> 需求登记</a>
+        <a href="/task-documents/" class="nav-item {% if 'task-documents' in request.path %}active{% endif %}"><i class="fas fa-file-alt"></i> 任务书管理</a>
+        
+        <a href="/index-id/" class="nav-item {% if 'index-id' in request.path %}active{% endif %}"><i class="fas fa-key"></i> INDEXID配置</a>
+        <a href="/test-cases/" class="nav-item {% if 'test-cases' in request.path %}active{% endif %}"><i class="fas fa-flask"></i> 测试用例</a>
+        <a href="/automation-test/" class="nav-item {% if 'automation-test' in request.path %}active{% endif %}"><i class="fas fa-robot"></i> 自动化测试</a>
+        <a href="/generator/" class="nav-item {% if 'generator' in request.path %}active{% endif %}"><i class="fas fa-code"></i> 代码生成</a>
+        <a href="/sql-manager/" class="nav-item {% if 'sql-manager' in request.path %}active{% endif %}"><i class="fas fa-box"></i> SQL脚本维护</a>
+        <a href="/ai-analysis/" class="nav-item {% if 'ai-analysis' in request.path %}active{% endif %}"><i class="fas fa-search"></i> AI辅助分析</a>
+        <a href="/ai-generation/" class="nav-item {% if 'ai-generation' in request.path %}active{% endif %}"><i class="fas fa-sparkles"></i> AI智能生成</a>
         {% if request.user.role.role_code == 'admin' %}
-        <a href="/users/" class="nav-item {% if 'users' in request.path %}active{% endif %}"><i>👥</i> 用户管理</a>
+        <a href="/users/" class="nav-item {% if 'users' in request.path %}active{% endif %}"><i class="fas fa-users"></i> 用户管理</a>
         {% endif %}
     </div>
     

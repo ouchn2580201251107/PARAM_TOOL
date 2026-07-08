@@ -1,0 +1,43 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}提交需求{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-paper-plane"></i> 提交需求流转</div>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+                <h4>需求信息</h4>
+                <p><strong>需求编号：</strong>{{ requirement.requirement_no }}</p>
+                <p><strong>需求标题：</strong>{{ requirement.title }}</p>
+                <p><strong>需求类型：</strong>
+                    {% if requirement.requirement_type == 'new' %}新增
+                    {% elif requirement.requirement_type == 'modify' %}变更
+                    {% elif requirement.requirement_type == 'reuse' %}复用
+                    {% endif %}
+                </p>
+                <p><strong>当前状态：</strong>{{ requirement.status }}</p>
+            </div>
+            <table class="form-table">
+                <tr>
+                    <td><label>处理人 *</label></td>
+                    <td><input type="text" name="assignee" placeholder="请输入技术人员姓名或账号" required></td>
+                </tr>
+                <tr>
+                    <td><label>流转备注</label></td>
+                    <td><textarea name="flow_comment" rows="4" placeholder="请输入流转备注信息"></textarea></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: right;">
+                        <button type="submit" class="btn btn-primary">确认提交</button>
+                        <a href="/requirements/" class="btn btn-secondary">取消</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+{% endblock %}

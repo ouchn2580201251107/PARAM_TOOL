@@ -1,0 +1,107 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}添加需求字段 - {{ requirement.requirement_no }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-plus"></i> 添加需求字段 - {{ requirement.requirement_no }}</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if table_fields %}
+            <div class="form-group">
+                <label>从关联参数表字段复制</label>
+                <select name="table_field" onchange="copyTableField(this)">
+                    <option value="">请选择字段</option>
+                    {% for field in table_fields %}
+                    <option value="{{ field.id }}" data-field='{{ field|json_script:"field" }}'>{{ field.field_name }} - {{ field.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label>从元数据选择</label>
+                <select name="metadata" onchange="copyMetadata(this)">
+                    <option value="">请选择元数据</option>
+                    {% for metadata in metadata_list %}
+                    <option value="{{ metadata.id }}">{{ metadata.name }} ({{ metadata.field_type }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" name="is_custom" {% if data and data.is_custom == 'on' %}checked{% endif %}> 自定义字段</label>
+            </div>
+            
+            <div class="form-group">
+                <label>字段名 *</label>
+                <input type="text" name="field_name" value="{{ data.field_name|default:'' }}" required placeholder="请输入字段名">
+            </div>
+            
+            <div class="form-group">
+                <label>显示名称 *</label>
+                <input type="text" name="display_name" value="{{ data.display_name|default:'' }}" required placeholder="请输入显示名称">
+            </div>
+            
+            <div class="form-group">
+                <label>字段类型 *</label>
+                <select name="field_type" required>
+                    {% for value, label in field_types %}
+                    <option value="{{ value }}" {% if data and data.field_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>长度</label>
+                <input type="number" name="length" value="{{ data.length|default:'' }}" placeholder="字段长度">
+            </div>
+            
+            <div class="form-group">
+                <label>小数位数</label>
+                <input type="number" name="decimal_places" value="{{ data.decimal_places|default:'' }}" placeholder="小数位数">
+            </div>
+            
+            <div class="form-group">
+                <label>前端控件类型 *</label>
+                <select name="control_type" required>
+                    {% for value, label in control_types %}
+                    <option value="{{ value }}" {% if data and data.control_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>存储方式</label>
+                <select name="storage_type">
+                    {% for value, label in storage_types %}
+                    <option value="{{ value }}" {% if data and data.storage_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" name="is_required" {% if data and data.is_required == 'on' %}checked{% endif %}> 必填</label>
+            </div>
+            
+            <div class="form-group">
+                <label>校验规则</label>
+                <input type="text" name="validation_rule" value="{{ data.validation_rule|default:'' }}" placeholder="校验规则">
+            </div>
+            
+            <div class="form-group">
+                <label>排序号</label>
+                <input type="number" name="sort_order" value="{{ data.sort_order|default:0 }}" placeholder="排序号">
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="/requirements/{{ requirement.id }}/fields/" class="btn btn-primary">返回列表</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

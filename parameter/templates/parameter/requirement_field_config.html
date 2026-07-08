@@ -1,0 +1,105 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}需求字段配置 - {{ requirement.requirement_no }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-columns"></i> 需求字段配置 - {{ requirement.requirement_no }} {{ requirement.title }}</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <a href="/requirements/{{ requirement.id }}/fields/add/" class="btn btn-success">新增字段</a>
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+            <form method="post" action="/requirements/{{ requirement.id }}/fields/confirm/" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info" onclick="return confirm('确定要确认所有字段配置吗？确认后将同步到参数表。')">确认配置</button>
+            </form>
+            <a href="/requirements/{{ requirement.id }}/" class="btn btn-secondary">返回详情</a>
+        </div>
+        {% if requirement.parameter_table %}
+        <div style="margin-bottom: 16px; padding: 12px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #0d6efd;">
+            <strong>关联参数表：</strong>{{ requirement.parameter_table.name }}
+            <span style="margin-left: 16px; color: #666; font-size: 13px;">可从关联参数表字段复制配置</span>
+        </div>
+        {% endif %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                    <th>字段名</th>
+                    <th>显示名称</th>
+                    <th>字段类型</th>
+                    <th>存储方式</th>
+                    <th>必填</th>
+                    <th>已确认</th>
+                    <th>排序号</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in field_configs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ field.id }}"></td>
+                    <td>{{ field.field_name }}</td>
+                    <td>{{ field.display_name }}</td>
+                    <td>{{ field.field_type }}</td>
+                    <td>{{ field.storage_type }}</td>
+                    <td>{% if field.is_required %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.is_confirmed %}<span style="color: #27ae60;">是</span>{% else %}<span style="color: #e74c3c;">否</span>{% endif %}</td>
+                    <td>{{ field.sort_order }}</td>
+                    <td>
+                        <a href="/requirements/{{ requirement.id }}/fields/edit/{{ field.id }}/" class="btn btn-success btn-sm">修改</a>
+                        <a href="/requirements/{{ requirement.id }}/fields/delete/{{ field.id }}/" class="btn btn-danger btn-sm" onclick="return confirm('确定要删除此字段吗？')">删除</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" style="text-align: center;">暂无字段配置，请点击上方按钮添加字段</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('.row-select');
+            var selectAll = document.getElementById('select-all');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function getSelectedIds() {
+            var checkboxes = document.querySelectorAll('.row-select:checked');
+            var ids = [];
+            checkboxes.forEach(function(checkbox) {
+                ids.push(checkbox.value);
+            });
+            return ids;
+        }
+
+        function editSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 1) {
+                window.location.href = '/requirements/{{ requirement.id }}/fields/edit/' + ids[0] + '/';
+            } else if (ids.length === 0) {
+                alert('请选择一条记录进行修改');
+            } else {
+                alert('只能选择一条记录进行修改');
+            }
+        }
+
+        function deleteSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+                ids.forEach(function(id) {
+                    window.location.href = '/requirements/{{ requirement.id }}/fields/delete/' + id + '/';
+                });
+            }
+        }
+    </script>
+{% endblock %}

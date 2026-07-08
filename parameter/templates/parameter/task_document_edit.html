@@ -1,0 +1,48 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑任务书{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-file-alt"></i> 编辑任务书</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>关联需求 *</label>
+                <select name="requirement" required>
+                    <option value="">请选择需求</option>
+                    {% for req in requirements %}
+                    <option value="{{ req.id }}" {% if doc.requirement_id == req.id %}selected{% endif %}>{{ req.requirement_no }} - {{ req.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>任务书编号 *</label>
+                <input type="text" name="document_no" value="{{ doc.document_no }}" required placeholder="请输入任务书编号">
+            </div>
+            <div class="form-group">
+                <label>任务书标题 *</label>
+                <input type="text" name="title" value="{{ doc.title }}" required placeholder="请输入任务书标题">
+            </div>
+            <div class="form-group">
+                <label>文档类型</label>
+                <select name="document_type">
+                    {% for code, name in types %}
+                    <option value="{{ code }}" {% if doc.document_type == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>任务书内容</label>
+                <textarea name="content" placeholder="请输入任务书内容">{{ doc.content }}</textarea>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success">保存</button>
+                <a href="/task-documents/" class="btn btn-primary">取消</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

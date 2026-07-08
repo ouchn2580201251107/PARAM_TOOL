@@ -1,0 +1,83 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}查看技术反馈{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-eye"></i> 技术反馈查看</div>
+        
+        {% for item in response_data %}
+        <div style="border: 1px solid #eee; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-weight: 600; color: #333;">需求编号: {{ item.requirement_no }}</div>
+                {% if item.modified_fields %}
+                <span style="background: #ffc107; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 12px;">有修改</span>
+                {% else %}
+                <span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">无修改</span>
+                {% endif %}
+            </div>
+            
+            {% if item.modified_fields %}
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; color: #856404;">
+                <strong>修改字段：</strong>{{ item.modified_fields|join:', ' }}
+            </div>
+            {% endif %}
+            
+            {% if item.tech_comments %}
+            <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; color: #0c5460;">
+                <strong>技术备注：</strong>{{ item.tech_comments }}
+            </div>
+            {% endif %}
+            
+            <table class="table" style="margin-bottom: 0;">
+                <tbody>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">需求标题</td>
+                        <td {% if 'title' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.title }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">需求类型</td>
+                        <td {% if 'requirement_type' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.requirement_type }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">关联参数表</td>
+                        <td {% if 'parameter_table' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.parameter_table }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">业务说明</td>
+                        <td {% if 'business_description' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.business_description }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">申请人</td>
+                        <td>{{ item.requester }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">状态</td>
+                        <td {% if 'status' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.status }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">流转状态</td>
+                        <td {% if 'flow_status' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.flow_status }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">故事点</td>
+                        <td {% if 'story_points' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.story_points }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">冲刺</td>
+                        <td {% if 'sprint' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.sprint }}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 120px; font-weight: 500;">项目管理平台ID</td>
+                        <td {% if 'project_platform_id' in item.modified_fields %}style="background: #fff3cd;"{% endif %}>{{ item.project_platform_id }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+        
+        <div style="margin-top: 20px;">
+            <a href="/requirements/" class="btn btn-primary">返回列表</a>
+        </div>
+    </div>
+{% endblock %}

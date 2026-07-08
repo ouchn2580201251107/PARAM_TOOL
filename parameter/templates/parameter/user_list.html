@@ -4,13 +4,17 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title">👥 用户管理</div>
-        <div style="margin-bottom: 16px;">
-            <a href="/users/create/" class="btn btn-success">+ 新建用户</a>
+        <div class="card-title"><i class="fas fa-users"></i> 用户管理</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <a href="/users/create/" class="btn btn-success">新增</a>
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
         </div>
         <table class="table">
             <thead>
                 <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
                     <th>用户名</th>
                     <th>真实姓名</th>
                     <th>角色</th>
@@ -24,6 +28,8 @@
             <tbody>
                 {% for user in users %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ user.id }}" {% if user.role.role_code == 'admin' and user.username == current_user.username %}disabled{% endif %}></td>
                     <td>{{ user.username }}</td>
                     <td>{{ user.real_name }}</td>
                     <td>
@@ -39,15 +45,10 @@
                         {% endif %}
                     </td>
                     <td>{{ user.created_at|date:'Y-m-d H:i' }}</td>
-                    <td>
-                        <a href="/users/edit/{{ user.id }}/" class="btn btn-primary btn-sm">编辑</a>
-                        {% if user.role.role_code != 'admin' or user.username != current_user.username %}
-                        <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ user.id }}, '{{ user.username }}')">删除</button>
-                        {% endif %}
-                    </td>
+                    <td></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" style="text-align: center;">暂无用户数据</td></tr>
+                <tr><td colspan="10" style="text-align: center;">暂无用户数据</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -107,6 +108,49 @@
 
 {% block extra_js %}
 <script>
+    function toggleSelectAll() {
+        var checkboxes = document.querySelectorAll('.row-select');
+        var selectAll = document.getElementById('select-all');
+        checkboxes.forEach(function(checkbox) {
+            if (!checkbox.disabled) {
+                checkbox.checked = selectAll.checked;
+            }
+        });
+    }
+
+    function getSelectedIds() {
+        var checkboxes = document.querySelectorAll('.row-select:checked');
+        var ids = [];
+        checkboxes.forEach(function(checkbox) {
+            ids.push(checkbox.value);
+        });
+        return ids;
+    }
+
+    function editSelected() {
+        var ids = getSelectedIds();
+        if (ids.length === 1) {
+            window.location.href = '/users/edit/' + ids[0] + '/';
+        } else if (ids.length === 0) {
+            alert('请选择一条记录进行修改');
+        } else {
+            alert('只能选择一条记录进行修改');
+        }
+    }
+
+    function deleteSelected() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) {
+            alert('请选择要删除的记录');
+            return;
+        }
+        if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+            ids.forEach(function(id) {
+                confirmDelete(id, '');
+            });
+        }
+    }
+
     function confirmDelete(userId, username) {
         var modal = document.getElementById('deleteModal');
         var message = document.getElementById('deleteMessage');

@@ -1,0 +1,85 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑需求字段 - {{ requirement.requirement_no }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-edit"></i> 编辑需求字段 - {{ requirement.requirement_no }}</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>字段名 *</label>
+                <input type="text" name="field_name" value="{{ field_config.field_name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>显示名称 *</label>
+                <input type="text" name="display_name" value="{{ field_config.display_name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>字段类型 *</label>
+                <select name="field_type" required>
+                    {% for value, label in field_types %}
+                    <option value="{{ value }}" {% if field_config.field_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>长度</label>
+                <input type="number" name="length" value="{{ field_config.length|default:'' }}">
+            </div>
+            
+            <div class="form-group">
+                <label>小数位数</label>
+                <input type="number" name="decimal_places" value="{{ field_config.decimal_places|default:'' }}">
+            </div>
+            
+            <div class="form-group">
+                <label>前端控件类型 *</label>
+                <select name="control_type" required>
+                    {% for value, label in control_types %}
+                    <option value="{{ value }}" {% if field_config.control_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>存储方式</label>
+                <select name="storage_type">
+                    {% for value, label in storage_types %}
+                    <option value="{{ value }}" {% if field_config.storage_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" name="is_visible" {% if field_config.is_visible %}checked{% endif %}> 显示</label>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" name="is_required" {% if field_config.is_required %}checked{% endif %}> 必填</label>
+            </div>
+            
+            <div class="form-group">
+                <label>校验规则</label>
+                <input type="text" name="validation_rule" value="{{ field_config.validation_rule|default:'' }}">
+            </div>
+            
+            <div class="form-group">
+                <label>排序号</label>
+                <input type="number" name="sort_order" value="{{ field_config.sort_order }}">
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="/requirements/{{ requirement.id }}/fields/" class="btn btn-primary">返回列表</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

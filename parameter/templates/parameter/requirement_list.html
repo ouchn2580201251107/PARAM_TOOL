@@ -4,21 +4,37 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title">📝 业务需求登记</div>
-        <div style="margin-bottom: 16px;">
-            <a href="/requirements/create/" class="btn btn-success">+ 新增需求</a>
+        <div class="card-title"><i class="fas fa-pencil-alt"></i> 业务需求登记</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            {% if is_business %}
+            <a href="/requirements/create/" class="btn btn-success">新增</a>
+            {% endif %}
+            {% if is_editable %}
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+            {% endif %}
+            {% if is_business %}
+            <a href="/requirements/export/" class="btn btn-info">导出ZIP</a>
+            {% endif %}
+            {% if is_technical %}
+            <a href="/requirements/import/" class="btn btn-warning">导入ZIP</a>
+            {% endif %}
+            {% if is_business %}
+            <a href="/requirements/import-response/" class="btn btn-secondary">导入反馈ZIP</a>
+            {% endif %}
         </div>
         <table class="table">
             <thead>
                 <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
                     <th>需求编号</th>
                     <th>需求标题</th>
                     <th>类型</th>
                     <th>关联参数表</th>
                     <th>申请人</th>
                     <th>状态</th>
-                    <th>故事点</th>
-                    <th>冲刺</th>
+                    <th>流转状态</th>
                     <th>申请日期</th>
                     <th>操作</th>
                 </tr>
@@ -26,6 +42,8 @@
             <tbody>
                 {% for req in requirements %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ req.id }}"></td>
                     <td><a href="/requirements/{{ req.id }}/">{{ req.requirement_no }}</a></td>
                     <td>{{ req.title }}</td>
                     <td>
@@ -34,20 +52,62 @@
                         {% elif req.requirement_type == 'reuse' %}复用
                         {% endif %}
                     </td>
-                    <td>{{ req.table_name|default:'-' }}</td>
+                    <td>{{ req.parameter_table.name|default:'-' }}</td>
                     <td>{{ req.requester }}</td>
-                    <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
-                    <td>{{ req.story_points|default:'-' }}</td>
-                    <td>{{ req.sprint|default:'-' }}</td>
+                    <td><span class="badge badge-{{ req.status }}">{{ req.get_status_display }}</span></td>
+                    <td><span class="badge badge-info">{{ req.get_flow_status_display }}</span></td>
                     <td>{{ req.request_date }}</td>
                     <td>
                         <a href="/requirements/{{ req.id }}/" class="btn btn-primary btn-sm">详情</a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="10" style="text-align: center;">暂无需求</td></tr>
+                <tr><td colspan="11" style="text-align: center;">暂无需求</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('.row-select');
+            var selectAll = document.getElementById('select-all');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function getSelectedIds() {
+            var checkboxes = document.querySelectorAll('.row-select:checked');
+            var ids = [];
+            checkboxes.forEach(function(checkbox) {
+                ids.push(checkbox.value);
+            });
+            return ids;
+        }
+
+        function editSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 1) {
+                window.location.href = '/requirements/edit/' + ids[0] + '/';
+            } else if (ids.length === 0) {
+                alert('请选择一条记录进行修改');
+            } else {
+                alert('只能选择一条记录进行修改');
+            }
+        }
+
+        function deleteSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+                ids.forEach(function(id) {
+                    window.location.href = '/requirements/delete/' + id + '/';
+                });
+            }
+        }
+    </script>
 {% endblock %}

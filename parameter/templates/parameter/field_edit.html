@@ -1,0 +1,100 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑字段 - {{ table.name }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-edit"></i> 编辑字段 - {{ table.name }}</div>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <table class="form-table">
+                <tr>
+                    <td><label>引用元数据</label></td>
+                    <td>
+                        <select name="metadata">
+                            <option value="">无</option>
+                            {% for meta in metadata_list %}
+                            <option value="{{ meta.id }}" {% if field.metadata_id == meta.id %}selected{% endif %}>{{ meta.name }} ({{ meta.field_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>字段名 *</label></td>
+                    <td><input type="text" name="field_name" value="{{ field.field_name }}" required></td>
+                </tr>
+                <tr>
+                    <td><label>显示名称 *</label></td>
+                    <td><input type="text" name="display_name" value="{{ field.display_name }}" required></td>
+                </tr>
+                <tr>
+                    <td><label>字段类型 *</label></td>
+                    <td>
+                        <select name="field_type" required>
+                            {% for type in field_types %}
+                            <option value="{{ type.0 }}" {% if field.field_type == type.0 %}selected{% endif %}>{{ type.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>长度</label></td>
+                    <td><input type="number" name="length" value="{{ field.length|default:'' }}"></td>
+                </tr>
+                <tr>
+                    <td><label>小数位数</label></td>
+                    <td><input type="number" name="decimal_places" value="{{ field.decimal_places|default:'' }}"></td>
+                </tr>
+                <tr>
+                    <td><label>前端控件 *</label></td>
+                    <td>
+                        <select name="control_type" required>
+                            {% for type in control_types %}
+                            <option value="{{ type.0 }}" {% if field.control_type == type.0 %}selected{% endif %}>{{ type.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>存储方式 *</label></td>
+                    <td>
+                        <select name="storage_type">
+                            {% for type in storage_types %}
+                            <option value="{{ type.0 }}" {% if field.storage_type == type.0 %}selected{% endif %}>{{ type.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label>是否显示</label></td>
+                    <td><input type="checkbox" name="is_visible" {% if field.is_visible %}checked{% endif %}></td>
+                </tr>
+                <tr>
+                    <td><label>必填</label></td>
+                    <td><input type="checkbox" name="is_required" {% if field.is_required %}checked{% endif %}></td>
+                </tr>
+                <tr>
+                    <td><label>校验规则</label></td>
+                    <td><input type="text" name="validation_rule" value="{{ field.validation_rule|default:'' }}"></td>
+                </tr>
+                <tr>
+                    <td><label>排序号</label></td>
+                    <td><input type="number" name="sort_order" value="{{ field.sort_order }}"></td>
+                </tr>
+                <tr>
+                    <td><label>是否自定义</label></td>
+                    <td><input type="checkbox" name="is_custom" {% if field.is_custom %}checked{% endif %}></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: right;">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <a href="/tables/{{ table.id }}/fields/" class="btn btn-secondary">取消</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+{% endblock %}

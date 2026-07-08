@@ -5,7 +5,7 @@
 {% block content %}
     {% if table %}
     <div class="card">
-        <div class="card-title">📋 参数表详情 - {{ table.name }}</div>
+        <div class="card-title"><i class="fas fa-list-alt"></i> 参数表详情 - {{ table.name }}</div>
         <div class="detail-info">
             <span class="label">参数表名称：</span><span class="value">{{ table.name }}</span>
         </div>
@@ -32,11 +32,14 @@
         </div>
         <div style="margin-top: 16px;">
             <a href="/tables/" class="btn btn-primary">返回列表</a>
+            {% if not table.is_simple %}
+            <a href="/tables/{{ table.id }}/fields/" class="btn btn-info btn-sm">字段配置</a>
+            {% endif %}
         </div>
     </div>
 
     <div class="card">
-        <div class="card-title">📊 字段定义列表</div>
+        <div class="card-title"><i class="fas fa-chart-bar"></i> 字段定义列表</div>
         <table class="table">
             <thead>
                 <tr>

@@ -2,6 +2,9 @@
 Spring Boot 代码生成工具
 提供根据参数表元数据生成完整Spring Boot项目代码的功能
 """
+import os
+
+from ..models import ParameterTable, FieldDefinition
 
 
 class SpringBootCodeGenerator:
@@ -9,6 +12,78 @@ class SpringBootCodeGenerator:
     Spring Boot代码生成器
     根据参数表元数据生成完整的Spring Boot项目代码，包括：
     Entity、DTO、Mapper、Service、ServiceImpl、Controller、Mapper XML等
+    """
+
+    def __init__(self):
+        """
+        初始化代码生成器
+        """
+        self.package_name = 'com.example'
+        self.module_name = 'demo'
+
+    def generate_project(self, table_ids, package_name=None, module_name=None):
+        """
+        生成完整的Spring Boot项目
+        
+        Args:
+            table_ids: 参数表ID列表
+            package_name: Java包名
+            module_name: 模块名
+            
+        Returns:
+            dict: 包含所有代码文件路径和内容的字典
+        """
+        if package_name:
+            self.package_name = package_name
+        if module_name:
+            self.module_name = module_name
+            
+        files = {}
+        
+        for table_id in table_ids:
+            table = ParameterTable.objects.get(id=table_id)
+            fields = FieldDefinition.objects.filter(parameter_table_id=table_id).order_by('sort_order')
+            
+            generator = SingleTableGenerator(table, fields, self.package_name, self.module_name)
+            table_files = generator.generate_all()
+            
+            for file_type, content in table_files.items():
+                file_path = self._get_file_path(file_type, generator)
+                files[file_path] = content
+        
+        return files
+
+    def _get_file_path(self, file_type, generator):
+        """
+        获取文件的完整路径
+        
+        Args:
+            file_type: 文件类型
+            generator: 单表生成器
+            
+        Returns:
+            str: 文件路径
+        """
+        path_map = {
+            'entity': f'src/main/java/{generator.package_path}/{generator.module_name}/entity/{generator.entity_name}.java',
+            'dto': f'src/main/java/{generator.package_path}/{generator.module_name}/dto/{generator.entity_name}DTO.java',
+            'mapper': f'src/main/java/{generator.package_path}/{generator.module_name}/mapper/{generator.entity_name}Mapper.java',
+            'service': f'src/main/java/{generator.package_path}/{generator.module_name}/service/{generator.entity_name}Service.java',
+            'service_impl': f'src/main/java/{generator.package_path}/{generator.module_name}/service/impl/{generator.entity_name}ServiceImpl.java',
+            'controller': f'src/main/java/{generator.package_path}/{generator.module_name}/controller/{generator.entity_name}Controller.java',
+            'mapper_xml': f'src/main/resources/mapper/{generator.entity_name}Mapper.xml',
+            'pom': 'pom.xml',
+            'application': f'src/main/java/{generator.package_path}/{generator.module_name}/{generator.module_name.capitalize()}Application.java',
+            'application_yaml': 'src/main/resources/application.yml',
+            'sql': f'src/main/resources/sql/{generator.table_name}.sql',
+        }
+        return path_map.get(file_type, file_type)
+
+
+class SingleTableGenerator:
+    """
+    单表代码生成器
+    根据单个参数表生成对应的Java代码文件
     """
 
     def __init__(self, table, fields, package_name='com.example', module_name='demo'):
@@ -47,6 +122,7 @@ class SpringBootCodeGenerator:
             'pom': self.generate_pom(),
             'application': self.generate_application(),
             'application_yaml': self.generate_application_yaml(),
+            'sql': self.generate_sql(),
         }
 
     def generate_entity(self):
@@ -562,6 +638,51 @@ logging:
   level:
     {self.package_name}.{self.module_name}.mapper: DEBUG
 """
+
+    def generate_sql(self):
+        """生成SQL建表语句"""
+        sql_fields = []
+        for field in self.fields:
+            sql_type = self._get_sql_type(field.field_type, field.length)
+            nullable = 'NOT NULL' if field.is_required else 'NULL'
+            default = ''
+            default_value = getattr(field, 'default_value', None)
+            if default_value:
+                if field.field_type == 'string':
+                    default = " DEFAULT '" + str(default_value) + "'"
+                else:
+                    default = " DEFAULT " + str(default_value)
+            comment = " COMMENT '" + field.display_name + "'"
+            sql_fields.append("    " + field.field_name + " " + sql_type + " " + nullable + default + comment)
+        
+        table_comment = self.table.business_description if self.table.business_description else self.table.name
+        
+        return """-- {table_name} 建表语句
+CREATE TABLE IF NOT EXISTS `{table_name}` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+{fields},
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT DEFAULT 0 COMMENT '删除标记'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='{table_comment}';
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS `idx_{table_name}_created_at` ON `{table_name}`(`created_at`);
+CREATE INDEX IF NOT EXISTS `idx_{table_name}_deleted` ON `{table_name}`(`deleted`);
+""".format(table_name=self.table_name, fields=',\n'.join(sql_fields), table_comment=table_comment)
+
+    def _get_sql_type(self, field_type, length):
+        """字段类型到SQL类型的映射"""
+        type_mapping = {
+            'string': f'VARCHAR({length if length else 255})',
+            'integer': 'INT',
+            'decimal': 'DECIMAL(18,4)',
+            'date': 'DATE',
+            'datetime': 'DATETIME',
+            'boolean': 'TINYINT(1)',
+            'text': 'TEXT',
+        }
+        return type_mapping.get(field_type, 'VARCHAR(255)')
 
     def _get_java_type(self, field_type, length):
         """字段类型到Java类型的映射"""

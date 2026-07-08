@@ -190,7 +190,6 @@ def import_index_id_configs():
         try:
             IndexIdConfig.objects.create(
                 id=int(row['id']),
-                parameter_table_id=int(row['parameter_table_id']),
                 index_id=row['index_id'],
                 business_name=row['business_name'],
                 business_description=row['business_description'] if row['business_description'] else None,

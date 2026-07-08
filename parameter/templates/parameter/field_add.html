@@ -1,0 +1,197 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}添加字段 - {{ table.name }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-plus"></i> 添加字段 - {{ table.name }}</div>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+                <label><input type="radio" name="is_custom" id="use_metadata" value="" {% if not request.POST.is_custom %}checked{% endif %} onclick="toggleCustomMode(false)"> 使用元数据</label>
+                <label style="margin-left: 20px;"><input type="radio" name="is_custom" id="use_custom" value="on" {% if request.POST.is_custom %}checked{% endif %} onclick="toggleCustomMode(true)"> 自定义字段</label>
+            </div>
+            
+            <div id="metadata-section">
+                <table class="form-table">
+                    <tr>
+                        <td><label>选择元数据 *</label></td>
+                        <td>
+                            <select name="metadata" onchange="fillFromMetadata(this.value)">
+                                <option value="">请选择元数据</option>
+                                {% for meta in metadata_list %}
+                                <option value="{{ meta.id }}" data-field-name="{{ meta.field_name_en }}" data-display-name="{{ meta.name }}" data-field-type="{{ meta.field_type }}" data-length="{{ meta.length }}" data-decimal-places="{{ meta.decimal_places }}" data-control-type="{{ meta.control_type }}" data-is-required="{{ meta.is_required }}" data-validation-rule="{{ meta.validation_rule }}">
+                                    {{ meta.name }} ({{ meta.field_type }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>字段名</label></td>
+                        <td><input type="text" name="field_name" id="field_name" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>显示名称</label></td>
+                        <td><input type="text" name="display_name" id="display_name" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>字段类型</label></td>
+                        <td><input type="text" name="field_type" id="field_type" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>长度</label></td>
+                        <td><input type="number" name="length" id="length" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>小数位数</label></td>
+                        <td><input type="number" name="decimal_places" id="decimal_places" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>前端控件</label></td>
+                        <td><input type="text" name="control_type" id="control_type" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>存储方式 *</label></td>
+                        <td>
+                            <select name="storage_type">
+                                {% for type in storage_types %}
+                                <option value="{{ type.0 }}">{{ type.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>必填</label></td>
+                        <td><input type="checkbox" name="is_required" id="is_required" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>校验规则</label></td>
+                        <td><input type="text" name="validation_rule" id="validation_rule" readonly></td>
+                    </tr>
+                    <tr>
+                        <td><label>排序号</label></td>
+                        <td><input type="number" name="sort_order" value="0"></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div id="custom-section" style="display: none;">
+                <table class="form-table">
+                    <tr>
+                        <td><label>字段名 *</label></td>
+                        <td><input type="text" name="field_name" required></td>
+                    </tr>
+                    <tr>
+                        <td><label>显示名称 *</label></td>
+                        <td><input type="text" name="display_name" required></td>
+                    </tr>
+                    <tr>
+                        <td><label>字段类型 *</label></td>
+                        <td>
+                            <select name="field_type" required>
+                                {% for type in field_types %}
+                                <option value="{{ type.0 }}">{{ type.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>长度</label></td>
+                        <td><input type="number" name="length"></td>
+                    </tr>
+                    <tr>
+                        <td><label>小数位数</label></td>
+                        <td><input type="number" name="decimal_places"></td>
+                    </tr>
+                    <tr>
+                        <td><label>前端控件 *</label></td>
+                        <td>
+                            <select name="control_type" required>
+                                {% for type in control_types %}
+                                <option value="{{ type.0 }}">{{ type.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>存储方式 *</label></td>
+                        <td>
+                            <select name="storage_type">
+                                {% for type in storage_types %}
+                                <option value="{{ type.0 }}">{{ type.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>必填</label></td>
+                        <td><input type="checkbox" name="is_required"></td>
+                    </tr>
+                    <tr>
+                        <td><label>校验规则</label></td>
+                        <td><input type="text" name="validation_rule"></td>
+                    </tr>
+                    <tr>
+                        <td><label>排序号</label></td>
+                        <td><input type="number" name="sort_order" value="0"></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="/tables/{{ table.id }}/fields/" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function toggleCustomMode(isCustom) {
+            var metadataSection = document.getElementById('metadata-section');
+            var customSection = document.getElementById('custom-section');
+            
+            if (isCustom) {
+                metadataSection.style.display = 'none';
+                customSection.style.display = 'block';
+            } else {
+                metadataSection.style.display = 'block';
+                customSection.style.display = 'none';
+            }
+        }
+
+        function fillFromMetadata(metadataId) {
+            if (!metadataId) {
+                document.getElementById('field_name').value = '';
+                document.getElementById('display_name').value = '';
+                document.getElementById('field_type').value = '';
+                document.getElementById('length').value = '';
+                document.getElementById('decimal_places').value = '';
+                document.getElementById('control_type').value = '';
+                document.getElementById('is_required').checked = false;
+                document.getElementById('validation_rule').value = '';
+                return;
+            }
+            
+            var select = document.querySelector('select[name="metadata"]');
+            var option = select.options[select.selectedIndex];
+            
+            document.getElementById('field_name').value = option.dataset.fieldName || option.dataset.displayName;
+            document.getElementById('display_name').value = option.dataset.displayName;
+            document.getElementById('field_type').value = option.dataset.fieldType;
+            document.getElementById('length').value = option.dataset.length || '';
+            document.getElementById('decimal_places').value = option.dataset.decimalPlaces || '';
+            document.getElementById('control_type').value = option.dataset.controlType;
+            document.getElementById('is_required').checked = option.dataset.isRequired === 'True';
+            document.getElementById('validation_rule').value = option.dataset.validationRule || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var isCustom = document.getElementById('use_custom').checked;
+            toggleCustomMode(isCustom);
+        });
+    </script>
+{% endblock %}

@@ -4,10 +4,19 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title">📄 任务书附件导出</div>
+        <div class="card-title"><i class="fas fa-file-alt"></i> 任务书附件导出</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            {% if is_editable %}
+            <a href="/task-documents/create/" class="btn btn-success">新增</a>
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+            {% endif %}
+        </div>
         <table class="table">
             <thead>
                 <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
                     <th>任务书编号</th>
                     <th>标题</th>
                     <th>文档类型</th>
@@ -18,12 +27,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for doc in documents %}
+                {% for doc in docs %}
                 <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ doc.id }}"></td>
                     <td>{{ doc.document_no }}</td>
                     <td>{{ doc.title }}</td>
-                    <td>{{ doc.document_type }}</td>
-                    <td><a href="/requirements/{{ doc.requirement_id }}/">{{ doc.requirement_no }} - {{ doc.requirement_title }}</a></td>
+                    <td>{{ doc.get_document_type_display }}</td>
+                    <td><a href="/requirements/{{ doc.requirement_id }}/">{{ doc.requirement.requirement_no }} - {{ doc.requirement.title }}</a></td>
                     <td>{{ doc.generated_at }}</td>
                     <td>{{ doc.exported_at|default:'-' }}</td>
                     <td>
@@ -31,9 +42,52 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align: center;">暂无任务书</td></tr>
+                <tr><td colspan="9" style="text-align: center;">暂无任务书</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <script>
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('.row-select');
+            var selectAll = document.getElementById('select-all');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function getSelectedIds() {
+            var checkboxes = document.querySelectorAll('.row-select:checked');
+            var ids = [];
+            checkboxes.forEach(function(checkbox) {
+                ids.push(checkbox.value);
+            });
+            return ids;
+        }
+
+        function editSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 1) {
+                window.location.href = '/task-documents/edit/' + ids[0] + '/';
+            } else if (ids.length === 0) {
+                alert('请选择一条记录进行修改');
+            } else {
+                alert('只能选择一条记录进行修改');
+            }
+        }
+
+        function deleteSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+                ids.forEach(function(id) {
+                    window.location.href = '/task-documents/delete/' + id + '/';
+                });
+            }
+        }
+    </script>
 {% endblock %}

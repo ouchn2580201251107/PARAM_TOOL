@@ -1,0 +1,44 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑参数表{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-list-alt"></i> 编辑参数表</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>参数表名称 *</label>
+                <input type="text" name="name" value="{{ table.name }}" required placeholder="请输入参数表名称">
+            </div>
+            <div class="form-group">
+                <label>业务说明 *</label>
+                <textarea name="business_description" required placeholder="请输入业务说明">{{ table.business_description }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>业务领域 *</label>
+                <input type="text" name="domain" value="{{ table.domain }}" required placeholder="请输入业务领域">
+            </div>
+            <div class="form-group">
+                <label>负责人 *</label>
+                <input type="text" name="owner" value="{{ table.owner }}" required placeholder="请输入负责人">
+            </div>
+            <div class="form-group">
+                <label>状态</label>
+                <select name="status">
+                    {% for status in statuses %}
+                    <option value="{{ status.value }}" {% if table.status == status.value %}selected{% endif %}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <button type="submit" class="btn btn-success">保存</button>
+                <a href="/tables/" class="btn btn-primary">取消</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}INDEXID配置{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-key"></i> INDEXID配置与业务信息登记</div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            {% if is_editable %}
+            <a href="/index-id/create/" class="btn btn-success">新增</a>
+            <button class="btn btn-primary" onclick="editSelected()">修改</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+            {% endif %}
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                    <th>INDEXID</th>
+                    <th>物理表名</th>
+                    <th>业务名称</th>
+                    <th>业务说明</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for config in configs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="checkbox" class="row-select" value="{{ config.id }}"></td>
+                    <td>{{ config.index_id }}</td>
+                    <td><code>{{ config.table_name }}</code></td>
+                    <td>{{ config.business_name }}</td>
+                    <td>{{ config.business_description|default:'-' }}</td>
+                    <td>{{ config.created_at }}</td>
+                    <td></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align: center;">暂无INDEXID配置</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('.row-select');
+            var selectAll = document.getElementById('select-all');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        function getSelectedIds() {
+            var checkboxes = document.querySelectorAll('.row-select:checked');
+            var ids = [];
+            checkboxes.forEach(function(checkbox) {
+                ids.push(checkbox.value);
+            });
+            return ids;
+        }
+
+        function editSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 1) {
+                window.location.href = '/index-id/edit/' + ids[0] + '/';
+            } else if (ids.length === 0) {
+                alert('请选择一条记录进行修改');
+            } else {
+                alert('只能选择一条记录进行修改');
+            }
+        }
+
+        function deleteSelected() {
+            var ids = getSelectedIds();
+            if (ids.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
+                ids.forEach(function(id) {
+                    window.location.href = '/index-id/delete/' + id + '/';
+                });
+            }
+        }
+    </script>
+{% endblock %}

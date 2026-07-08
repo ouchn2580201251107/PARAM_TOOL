@@ -1,0 +1,86 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}编辑导入的需求{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-edit"></i> 技术人员编辑导入的需求</div>
+        <form method="post" action="/requirements/import/edit/">
+            {% csrf_token %}
+            <input type="hidden" name="import_key" value="{{ import_key }}">
+            
+            {% for i, item in imported_data %}
+            <div style="border: 1px solid #eee; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="font-weight: 600; margin-bottom: 12px; color: #333;">需求编号: {{ item.requirement_no }}</div>
+                
+                {% if item.modified_fields %}
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; color: #856404;">
+                    <strong>已修改字段：</strong>{{ item.modified_fields|join:', ' }}
+                </div>
+                {% endif %}
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>需求标题</label>
+                    <input type="text" name="item_{{ i }}_title" value="{{ item.title }}" {% if 'title' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>需求类型</label>
+                    <input type="text" name="item_{{ i }}_requirement_type" value="{{ item.requirement_type }}" {% if 'requirement_type' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>关联参数表</label>
+                    <input type="text" name="item_{{ i }}_parameter_table" value="{{ item.parameter_table }}" {% if 'parameter_table' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>业务说明</label>
+                    <textarea name="item_{{ i }}_business_description" rows="3" {% if 'business_description' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>{{ item.business_description }}</textarea>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>申请人</label>
+                    <input type="text" name="item_{{ i }}_requester" value="{{ item.requester }}" readonly>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>状态</label>
+                    <input type="text" name="item_{{ i }}_status" value="{{ item.status }}" {% if 'status' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>流转状态</label>
+                    <input type="text" name="item_{{ i }}_flow_status" value="{{ item.flow_status }}" {% if 'flow_status' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>故事点</label>
+                    <input type="text" name="item_{{ i }}_story_points" value="{{ item.story_points }}" {% if 'story_points' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>冲刺</label>
+                    <input type="text" name="item_{{ i }}_sprint" value="{{ item.sprint }}" {% if 'sprint' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>项目管理平台ID</label>
+                    <input type="text" name="item_{{ i }}_project_platform_id" value="{{ item.project_platform_id }}" {% if 'project_platform_id' in item.modified_fields %}style="background: #fff3cd; border-color: #ffc107;"{% endif %}>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label>技术备注</label>
+                    <textarea name="item_{{ i }}_tech_comments" rows="2" placeholder="输入技术调整说明">{{ item.tech_comments }}</textarea>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-success">保存修改</button>
+                <a href="/requirements/export-response/{{ import_key }}/" class="btn btn-info">导出反馈ZIP</a>
+                <a href="/requirements/" class="btn btn-primary">返回列表</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
