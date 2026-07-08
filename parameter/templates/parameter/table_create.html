@@ -11,8 +11,12 @@
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label>参数表名称 *</label>
-                <input type="text" name="name" value="{{ data.name|default:'' }}" required placeholder="请输入参数表名称">
+                <label>英文名称（正式名称） *</label>
+                <input type="text" name="name_en" value="{{ data.name_en|default:'' }}" required placeholder="由大写字母和下划线组成，如：USER_INFO">
+            </div>
+            <div class="form-group">
+                <label>中文名称 *</label>
+                <input type="text" name="name" value="{{ data.name|default:'' }}" required placeholder="用于解释说明">
             </div>
             <div class="form-group">
                 <label>业务说明 *</label>

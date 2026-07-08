@@ -84,11 +84,17 @@ class IndexIdConfigListView(View):
             configs = IndexIdConfig.objects.all()
             logger.info(f"[IndexIdConfigListView] INDEXID配置查询完成，记录数: {configs.count()}")
             
+            search_name = request.GET.get('search', '')
+            if search_name:
+                configs = configs.filter(index_id__icontains=search_name) | configs.filter(business_name__icontains=search_name) | configs.filter(business_description__icontains=search_name)
+                logger.info(f"[IndexIdConfigListView] 搜索后记录数: {configs.count()}")
+            
             is_editable = request.user.role.role_code in ['admin', 'technical']
             
             context = {
                 'configs': configs,
                 'is_editable': is_editable,
+                'search_name': search_name,
             }
             logger.info(f"[IndexIdConfigListView] INDEXID配置列表查询成功，即将渲染模板")
             return render(request, 'parameter/indexid_configs.html', context)

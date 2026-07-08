@@ -4,10 +4,10 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-title"><i class="fas fa-sparkles"></i> AI智能生成</div>
+        <div class="card-title"><i class="fas fa-robot"></i> AI智能生成</div>
         
         <div style="margin-bottom: 24px;">
-            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;">任务书生成</div>
+            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;"><i class="fas fa-file-alt"></i> 任务书生成</div>
             <p style="color: #666; margin-bottom: 12px;">根据需求自动生成规范格式的任务书内容</p>
             
             <form method="post" action="{% url 'ai_task_document_generation' %}">
@@ -26,7 +26,7 @@
         </div>
 
         <div style="margin-bottom: 24px;">
-            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;">测试用例生成</div>
+            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;"><i class="fas fa-flask"></i> 测试用例生成</div>
             <p style="color: #666; margin-bottom: 12px;">根据需求自动生成覆盖正常流程、边界条件、异常场景的测试用例</p>
             
             <form method="post" action="{% url 'ai_test_case_generation' %}">
@@ -45,7 +45,7 @@
         </div>
 
         <div>
-            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;">SQL语句生成</div>
+            <div class="card-title" style="font-size: 16px; margin-bottom: 12px;"><i class="fas fa-table"></i> SQL语句生成</div>
             <p style="color: #666; margin-bottom: 12px;">根据自然语言描述自动生成SQL语句</p>
             
             <form method="post" action="{% url 'ai_sql_generation' %}">

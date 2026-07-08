@@ -14,6 +14,10 @@ class ParameterTable(models.Model):
     - SIMPLE表是公用的数据库表，字段有：INDEXID、CODE、CNAME、ENAME、OTHERS等字段
     - 在参数清单中，按照INDEXID分为多个表展示
     - SIMPLE表由系统自动配置，标记为S，仅展示不可更改
+    
+    名称说明：
+    - name_en: 英文名称，正式名称，由大写字母和下划线组成，用于程序标识
+    - name: 中文名称，用于解释说明
     """
     
     TABLE_STATUS_CHOICES = [
@@ -22,7 +26,8 @@ class ParameterTable(models.Model):
         ('deprecated', '废弃'),
     ]
 
-    name = models.CharField(max_length=200, verbose_name='参数表名称')
+    name_en = models.CharField(max_length=200, verbose_name='英文名称（正式名称）', help_text='由大写字母和下划线组成，如：USER_INFO', default='DEFAULT_TABLE')
+    name = models.CharField(max_length=200, verbose_name='中文名称', help_text='用于解释说明')
     business_description = models.TextField(verbose_name='业务说明')
     domain = models.CharField(max_length=100, verbose_name='所属业务领域')
     owner = models.CharField(max_length=100, verbose_name='负责人')
@@ -37,7 +42,7 @@ class ParameterTable(models.Model):
         verbose_name_plural = '参数表业务说明底账'
 
     def __str__(self):
-        return self.name
+        return f"{self.name_en} ({self.name})"
 
 
 class Metadata(models.Model):

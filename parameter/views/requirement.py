@@ -48,6 +48,11 @@ class RequirementListView(View):
                 requirements = requirements.filter(requirement_type=type_filter)
                 logger.info(f"[RequirementListView] 按类型过滤后记录数: {requirements.count()}")
             
+            search_name = request.GET.get('search', '')
+            if search_name:
+                requirements = requirements.filter(title__icontains=search_name) | requirements.filter(requirement_no__icontains=search_name) | requirements.filter(business_description__icontains=search_name) | requirements.filter(requester__icontains=search_name)
+                logger.info(f"[RequirementListView] 搜索后记录数: {requirements.count()}")
+            
             role_code = request.user.role.role_code
             is_editable = role_code in ['admin', 'technical', 'business']
             is_business = role_code in ['admin', 'business']
@@ -57,6 +62,7 @@ class RequirementListView(View):
                 'requirements': requirements,
                 'status_filter': status_filter,
                 'type_filter': type_filter,
+                'search_name': search_name,
                 'statuses': Requirement.STATUS_CHOICES,
                 'types': Requirement.REQUIREMENT_TYPE_CHOICES,
                 'is_editable': is_editable,
@@ -384,7 +390,7 @@ class RequirementExportView(View):
             
             for table_id, data in tables_with_fields.items():
                 table = data['table']
-                safe_table_name = self._safe_filename(table.name)
+                safe_table_name = self._safe_filename(table.name_en)
                 table_csv = io.StringIO()
                 writer = csv.writer(table_csv)
                 writer.writerow(['需求编号', '字段名', '显示名称', '字段类型', '长度', '小数位数', '前端控件类型', '存储方式', '是否必填', '校验规则', '排序号', '是否确认'])
@@ -1058,6 +1064,7 @@ class RequirementFieldConfirmView(View):
     """
     需求字段确认视图
     业务人员确认需求字段配置，确认后可以同步到参数表字段配置
+    如果需求提出了变化，则参数清单也要对应修改（增删改）
     """
     def post(self, request, req_id):
         logger.info(f"[RequirementFieldConfirmView] 确认需求字段配置，req_id: {req_id}")
@@ -1071,6 +1078,8 @@ class RequirementFieldConfirmView(View):
                 field_config.save()
             
             if requirement.parameter_table:
+                requirement_field_names = set(field_configs.values_list('field_name', flat=True))
+                
                 for field_config in field_configs:
                     existing_field = FieldDefinition.objects.filter(
                         parameter_table_id=requirement.parameter_table_id,
@@ -1103,6 +1112,14 @@ class RequirementFieldConfirmView(View):
                             validation_rule=field_config.validation_rule,
                             sort_order=field_config.sort_order,
                         )
+                
+                existing_fields = FieldDefinition.objects.filter(
+                    parameter_table_id=requirement.parameter_table_id
+                )
+                for existing_field in existing_fields:
+                    if existing_field.field_name not in requirement_field_names:
+                        existing_field.delete()
+                        logger.info(f"[RequirementFieldConfirmView] 删除参数表中不再需要的字段: {existing_field.field_name}")
             
             logger.info(f"[RequirementFieldConfirmView] 需求字段配置确认成功，已同步到参数表")
             return redirect('requirement_field_config', req_id=req_id)

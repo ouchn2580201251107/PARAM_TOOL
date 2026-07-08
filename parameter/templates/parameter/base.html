@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="/static/resources/fontawesome/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background-color: #f5f7fa; }
-        .header { background: #094194; color: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; background-color: #f5f7fa; padding-top: 60px; }
+        .header { position: fixed; top: 0; left: 0; right: 0; background: #094194; color: white; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
         .header h1 { font-size: 20px; font-weight: 600; margin: 0; }
         .header .user-info { font-size: 14px; display: flex; align-items: center; gap: 12px; }
-        .sidebar { width: 220px; background: #2c3e50; min-height: calc(100vh - 60px); float: left; }
+        .sidebar { position: fixed; top: 60px; left: 0; width: 220px; background: #2c3e50; height: calc(100vh - 60px); overflow-y: auto; z-index: 900; }
         .sidebar .nav-item { display: block; color: #ecf0f1; padding: 12px 20px; text-decoration: none; border-left: 3px solid transparent; }
         .sidebar .nav-item:hover, .sidebar .nav-item.active { background: #34495e; border-left-color: #094194; }
         .sidebar .nav-item i { margin-right: 8px; }
@@ -72,7 +72,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>参数表配置辅助工具</h1>
+        <h1><a href="/" style="color: white; text-decoration: none;">参数表配置辅助工具</a></h1>
         <div class="user-info">
             <span>当前用户: {{ request.user.real_name|default:request.user.username }}</span>
             <span class="badge badge-{{ request.user.role.role_code|default:'general' }}">{{ request.user.role.role_name|default:'-' }}</span>
@@ -82,7 +82,6 @@
     </div>
     
     <div class="sidebar">
-        <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}"><i class="fas fa-home"></i> 首页</a>
         <a href="/tables/" class="nav-item {% if 'tables' in request.path %}active{% endif %}"><i class="fas fa-list-alt"></i> 参数表清单</a>
         <a href="/metadata/" class="nav-item {% if 'metadata' in request.path %}active{% endif %}"><i class="fas fa-chart-bar"></i> 元数据管理</a>
         <a href="/requirements/" class="nav-item {% if 'requirements' in request.path %}active{% endif %}"><i class="fas fa-pencil-alt"></i> 需求登记</a>
@@ -94,7 +93,7 @@
         <a href="/generator/" class="nav-item {% if 'generator' in request.path %}active{% endif %}"><i class="fas fa-code"></i> 代码生成</a>
         <a href="/sql-manager/" class="nav-item {% if 'sql-manager' in request.path %}active{% endif %}"><i class="fas fa-box"></i> SQL脚本维护</a>
         <a href="/ai-analysis/" class="nav-item {% if 'ai-analysis' in request.path %}active{% endif %}"><i class="fas fa-search"></i> AI辅助分析</a>
-        <a href="/ai-generation/" class="nav-item {% if 'ai-generation' in request.path %}active{% endif %}"><i class="fas fa-sparkles"></i> AI智能生成</a>
+        <a href="/ai-generation/" class="nav-item {% if 'ai-generation' in request.path %}active{% endif %}"><i class="fas fa-cog"></i> AI智能生成</a>
         {% if request.user.role.role_code == 'admin' %}
         <a href="/users/" class="nav-item {% if 'users' in request.path %}active{% endif %}"><i class="fas fa-users"></i> 用户管理</a>
         {% endif %}

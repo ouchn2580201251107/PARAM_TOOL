@@ -1,13 +1,16 @@
 {% extends 'parameter/base.html' %}
 
-{% block title %}{{ table.name }} - 参数表详情{% endblock %}
+{% block title %}{{ table.name_en }} - 参数表详情{% endblock %}
 
 {% block content %}
     {% if table %}
     <div class="card">
-        <div class="card-title"><i class="fas fa-list-alt"></i> 参数表详情 - {{ table.name }}</div>
+        <div class="card-title"><i class="fas fa-list-alt"></i> 参数表详情 - {{ table.name_en }}</div>
         <div class="detail-info">
-            <span class="label">参数表名称：</span><span class="value">{{ table.name }}</span>
+            <span class="label">英文名称：</span><span class="value">{{ table.name_en }}</span>
+        </div>
+        <div class="detail-info">
+            <span class="label">中文名称：</span><span class="value">{{ table.name }}</span>
         </div>
         <div class="detail-info">
             <span class="label">业务说明：</span><span class="value">{{ table.business_description }}</span>

@@ -25,12 +25,18 @@ class MetadataListView(View):
             metadata_list = Metadata.objects.all()
             logger.info(f"[MetadataListView] 元数据查询完成，记录数: {metadata_list.count()}")
             
+            search_name = request.GET.get('search', '')
+            if search_name:
+                metadata_list = metadata_list.filter(name__icontains=search_name) | metadata_list.filter(field_name_en__icontains=search_name) | metadata_list.filter(description__icontains=search_name)
+                logger.info(f"[MetadataListView] 搜索后记录数: {metadata_list.count()}")
+            
             is_editable = request.user.role.role_code in ['admin', 'technical']
             logger.info(f"[MetadataListView] 当前用户可编辑: {is_editable}")
             
             context = {
                 'metadata_list': metadata_list,
                 'is_editable': is_editable,
+                'search_name': search_name,
             }
             logger.info(f"[MetadataListView] 元数据列表查询成功，即将渲染模板")
             return render(request, 'parameter/metadata_list.html', context)

@@ -40,7 +40,7 @@ class ParameterTableListView(View):
                 logger.info(f"[ParameterTableListView] 按status过滤后记录数: {tables.count()}")
             
             if search_name:
-                tables = tables.filter(name__icontains=search_name) | tables.filter(business_description__icontains=search_name)
+                tables = tables.filter(name_en__icontains=search_name) | tables.filter(name__icontains=search_name) | tables.filter(business_description__icontains=search_name)
                 logger.info(f"[ParameterTableListView] 按搜索词过滤后记录数: {tables.count()}")
             
             domains = ParameterTable.objects.values_list('domain', flat=True).distinct()
@@ -111,6 +111,7 @@ class ParameterTableCreateView(View):
         logger.info(f"[ParameterTableCreateView] 创建参数表")
         try:
             table = ParameterTable(
+                name_en=request.POST.get('name_en'),
                 name=request.POST.get('name'),
                 business_description=request.POST.get('business_description'),
                 domain=request.POST.get('domain'),
@@ -119,7 +120,7 @@ class ParameterTableCreateView(View):
                 is_simple=request.POST.get('is_simple') == 'on',
             )
             table.save()
-            logger.info(f"[ParameterTableCreateView] 参数表创建成功，name: {table.name}, is_simple: {table.is_simple}")
+            logger.info(f"[ParameterTableCreateView] 参数表创建成功，name_en: {table.name_en}, name: {table.name}, is_simple: {table.is_simple}")
             return redirect('table_list')
         except Exception as e:
             logger.error(f"[ParameterTableCreateView] 创建参数表失败: {str(e)}", exc_info=True)
@@ -161,13 +162,14 @@ class ParameterTableEditView(View):
             if table.is_simple:
                 logger.warning(f"[ParameterTableEditView] SIMPLE表不可更新，table_id: {table_id}")
                 return render(request, 'parameter/error.html', {'message': 'SIMPLE表仅展示，不可更新'})
+            table.name_en = request.POST.get('name_en')
             table.name = request.POST.get('name')
             table.business_description = request.POST.get('business_description')
             table.domain = request.POST.get('domain')
             table.owner = request.POST.get('owner')
             table.status = request.POST.get('status', 'draft')
             table.save()
-            logger.info(f"[ParameterTableEditView] 参数表更新成功，name: {table.name}")
+            logger.info(f"[ParameterTableEditView] 参数表更新成功，name_en: {table.name_en}, name: {table.name}")
             return redirect('table_list')
         except ParameterTable.DoesNotExist:
             logger.error(f"[ParameterTableEditView] 参数表不存在，table_id: {table_id}")

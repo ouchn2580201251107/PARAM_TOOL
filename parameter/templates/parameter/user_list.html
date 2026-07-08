@@ -45,7 +45,12 @@
                         {% endif %}
                     </td>
                     <td>{{ user.created_at|date:'Y-m-d H:i' }}</td>
-                    <td></td>
+                    <td>
+                        <a href="/users/edit/{{ user.id }}/" class="btn btn-primary btn-sm">修改</a>
+                        {% if user.role.role_code != 'admin' or user.username != current_user.username %}
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ user.id }}', '{{ user.username }}')">删除</button>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="10" style="text-align: center;">暂无用户数据</td></tr>
@@ -146,7 +151,7 @@
         }
         if (confirm('确定要删除选中的 ' + ids.length + ' 条记录吗？')) {
             ids.forEach(function(id) {
-                confirmDelete(id, '');
+                window.location.href = '/users/delete/' + id + '/';
             });
         }
     }
@@ -179,7 +184,7 @@
         <p id="deleteMessage"></p>
         <div class="modal-actions">
             <button class="btn btn-primary" onclick="closeModal()">取消</button>
-            <a id="confirmDeleteBtn" class="btn btn-danger" href="#" onclick="closeModal()">确认删除</a>
+            <a id="confirmDeleteBtn" class="btn btn-danger" href="#">确认删除</a>
         </div>
     </div>
 </div>

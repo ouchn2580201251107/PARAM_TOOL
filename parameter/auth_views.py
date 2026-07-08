@@ -274,6 +274,24 @@ class UserDeleteView(View):
             return redirect('user_list')
         except User.DoesNotExist:
             return render(request, 'parameter/error.html', {'message': '用户不存在'})
+    
+    def post(self, request, user_id):
+        logger.info(f"[UserDeleteView] 管理员 {request.user.username} POST删除用户，user_id: {user_id}")
+        try:
+            user = User.objects.get(id=user_id)
+            
+            if user.role.role_code == 'admin' and user.username == request.user.username:
+                logger.warning(f"[UserDeleteView] 管理员尝试删除自己")
+                return render(request, 'parameter/error.html', {'message': '不能删除当前登录的管理员账号'})
+            
+            user.delete()
+            logger.info(f"[UserDeleteView] 用户 {user.username} 删除成功")
+            return redirect('user_list')
+        except User.DoesNotExist:
+            return render(request, 'parameter/error.html', {'message': '用户不存在'})
+        except Exception as e:
+            logger.error(f"[UserDeleteView] 删除用户失败: {str(e)}", exc_info=True)
+            return render(request, 'parameter/error.html', {'message': f'删除用户失败: {str(e)}'})
 
 @method_decorator(login_required, name='dispatch')
 class ChangePasswordView(View):

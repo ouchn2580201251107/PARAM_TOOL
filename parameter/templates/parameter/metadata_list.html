@@ -5,12 +5,16 @@
 {% block content %}
     <div class="card">
         <div class="card-title"><i class="fas fa-chart-bar"></i> 预设常用元数据</div>
-        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             {% if is_editable %}
             <a href="/metadata/create/" class="btn btn-success">新增</a>
             <button class="btn btn-primary" onclick="editSelected()">修改</button>
             <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
             {% endif %}
+            <div style="flex: 1; display: flex; align-items: center; gap: 10px; justify-content: flex-end;">
+                <input type="text" class="search-box" placeholder="搜索元数据名称或字段" value="{{ search_name }}" onkeyup="if(event.keyCode==13) search()">
+                <button class="btn btn-primary" onclick="search()">搜索</button>
+            </div>
         </div>
         <table class="table">
             <thead>
@@ -52,6 +56,12 @@
     </div>
 
     <script>
+        function search() {
+            var keyword = document.querySelector('.search-box').value;
+            var url = '/metadata/?search=' + encodeURIComponent(keyword);
+            window.location.href = url;
+        }
+
         function toggleSelectAll() {
             var checkboxes = document.querySelectorAll('.row-select');
             var selectAll = document.getElementById('select-all');
