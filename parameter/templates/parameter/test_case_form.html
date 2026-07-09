@@ -1,0 +1,161 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}{% if case %}编辑测试用例{% else %}新增测试用例{% endif %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title">
+            <i class="fas fa-flask"></i> {% if case %}编辑测试用例 - {{ case.case_no }}{% else %}新增测试用例{% endif %}
+            {% if case %}
+            <a href="/test-cases/" style="margin-left: 16px; font-size: 14px; font-weight: normal;">[返回列表]</a>
+            {% endif %}
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>关联需求 <span style="color: red;">*</span></label>
+                    <select name="requirement" class="form-control" required>
+                        <option value="">请选择需求</option>
+                        {% for req in requirements %}
+                        <option value="{{ req.id }}" {% if case and case.requirement.id == req.id %}selected{% elif post_data and post_data.requirement == req.id|stringformat:"i" %}selected{% endif %}>
+                            {{ req.requirement_no }} - {{ req.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>关联参数表</label>
+                    <select name="parameter_table" class="form-control">
+                        <option value="">请选择参数表</option>
+                        {% for table in tables %}
+                        <option value="{{ table.id }}" {% if case and case.parameter_table.id == table.id %}selected{% elif post_data and post_data.parameter_table == table.id|stringformat:"i" %}selected{% endif %}>
+                            {{ table.name_en }} - {{ table.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>用例编号</label>
+                    <input type="text" name="case_no" class="form-control" value="{{ case.case_no|default:'' }}" placeholder="自动生成">
+                </div>
+                
+                <div class="form-group">
+                    <label>用例类型 <span style="color: red;">*</span></label>
+                    <select name="case_type" class="form-control" required>
+                        {% for type in types %}
+                        <option value="{{ type.0 }}" {% if case and case.case_type == type.0 %}selected{% elif post_data and post_data.case_type == type.0 %}selected{% endif %}>
+                            {{ type.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>用例标题 <span style="color: red;">*</span></label>
+                <input type="text" name="title" class="form-control" value="{{ case.title|default:'' }}" placeholder="请输入用例标题" required>
+            </div>
+            
+            <div class="form-group">
+                <label>前置条件</label>
+                <textarea name="preconditions" class="form-control" rows="3" placeholder="请输入前置条件">{{ case.preconditions|default:'' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>测试步骤 <span style="color: red;">*</span></label>
+                <textarea name="steps" class="form-control" rows="5" placeholder="请输入测试步骤，每行一步" required>{{ case.steps|default:'' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>预期结果 <span style="color: red;">*</span></label>
+                <textarea name="expected_result" class="form-control" rows="3" placeholder="请输入预期结果" required>{{ case.expected_result|default:'' }}</textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>状态</label>
+                    <select name="status" class="form-control">
+                        {% for status in statuses %}
+                        <option value="{{ status.0 }}" {% if case and case.status == status.0 %}selected{% elif post_data and post_data.status == status.0 %}selected{% endif %}>
+                            {{ status.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>是否自动化</label>
+                    <div style="margin-top: 8px;">
+                        <input type="checkbox" name="automated" {% if case and case.automated %}checked{% elif post_data and post_data.automated == 'on' %}checked{% endif %}>
+                        <span style="margin-left: 8px;">是</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if case %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label>确认状态</label>
+                    <span class="badge {% if case.confirmed %}badge-success{% else %}badge-warning{% endif %}">
+                        {% if case.confirmed %}已确认{% else %}待确认{% endif %}
+                    </span>
+                </div>
+                {% if case.confirmed %}
+                <div class="form-group">
+                    <label>确认人</label>
+                    <span>{{ case.confirmed_by.username }}</span>
+                </div>
+                <div class="form-group">
+                    <label>确认时间</label>
+                    <span>{{ case.confirmed_at }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="/test-cases/" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+    
+    {% if case and recent_results %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-history"></i> 最近测试结果（{{ recent_results|length }}条）</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>执行批次</th>
+                    <th>执行状态</th>
+                    <th>错误信息</th>
+                    <th>执行时长</th>
+                    <th>执行日期</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in recent_results %}
+                <tr>
+                    <td><a href="/automation-test/?batch_id={{ result.test_batch.id }}">{{ result.test_batch.batch_no }}</a></td>
+                    <td><span class="badge badge-{{ result.status }}">{{ result.get_status_display }}</span></td>
+                    <td>{{ result.error_message|default:'-'|truncatechars:50 }}</td>
+                    <td>{{ result.duration|default:'-' }}秒</td>
+                    <td>{{ result.execution_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+{% endblock %}

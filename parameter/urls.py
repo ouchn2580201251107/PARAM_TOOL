@@ -7,12 +7,12 @@ from . import auth_views
 from .ai import views as ai_views
 
 from .views.home import index
-from .views.parameter_table import ParameterTableListView, ParameterTableDetailView, ParameterTableCreateView, ParameterTableEditView, ParameterTableDeleteView, ParameterTableFieldConfigurationView, FieldAddView, FieldEditView, FieldDeleteView
+from .views.parameter_table import ParameterTableListView, ParameterTableDetailView, ParameterTableCreateView, ParameterTableEditView, ParameterTableDeleteView, ParameterTableFieldConfigurationView, FieldAddView, FieldEditView, FieldDeleteView, ParameterTableAPIVIew
 from .views.metadata import MetadataListView, MetadataCreateView, MetadataEditView, MetadataDeleteView
-from .views.requirement import RequirementListView, RequirementDetailView, RequirementCreateView, RequirementEditView, RequirementDeleteView, RequirementSubmitView, RequirementProcessView, RequirementCompleteView, RequirementUpdateStatusView, RequirementExportView, RequirementImportView, RequirementImportEditView, RequirementExportResponseView, RequirementImportResponseView, RequirementFieldConfigView, RequirementFieldAddView, RequirementFieldEditView, RequirementFieldDeleteView, RequirementFieldConfirmView
+from .views.requirement import RequirementListView, RequirementDetailView, RequirementCreateView, RequirementEditView, RequirementDeleteView, RequirementSubmitView, RequirementProcessView, RequirementCompleteView, RequirementUpdateStatusView, RequirementExportView, RequirementZIPImportView, RequirementImportView, RequirementImportEditView, RequirementExportResponseView, RequirementImportResponseView, RequirementFieldConfigView, RequirementFieldAddView, RequirementFieldEditView, RequirementFieldDeleteView, RequirementFieldConfirmView
 from .views.task_document import TaskDocumentListView, TaskDocumentExportView, TaskDocumentCreateView, TaskDocumentEditView, TaskDocumentDeleteView
-from .views.config import IndexIdConfigListView, IndexIdConfigCreateView, IndexIdConfigEditView, IndexIdConfigDeleteView
-from .views.test import TestCaseListView, AutomationTestResultView
+from .views.config import ProductTableConfigListView, ProductTableConfigCreateView, ProductTableConfigEditView, ProductTableConfigDeleteView
+from .views.test import TestCaseListView, TestCaseCreateView, TestCaseEditView, AutomationTestResultView, TestBatchStatusView
 from .views.springboot import SpringBootGeneratorView, SpringBootDownloadView
 from .views.sql_manager import SqlManagerView
 
@@ -34,6 +34,7 @@ urlpatterns = [
     path('tables/<str:table_id>/fields/edit/<str:field_id>/', FieldEditView.as_view(), name='field_edit'),
     path('tables/<str:table_id>/fields/delete/<str:field_id>/', FieldDeleteView.as_view(), name='field_delete'),
     path('tables/<str:table_id>/', ParameterTableDetailView.as_view(), name='table_detail'),
+    path('api/tables/', ParameterTableAPIVIew.as_view(), name='table_api'),
     path('metadata/', MetadataListView.as_view(), name='metadata_list'),
     path('metadata/create/', MetadataCreateView.as_view(), name='metadata_create'),
     path('metadata/edit/<str:metadata_id>/', MetadataEditView.as_view(), name='metadata_edit'),
@@ -46,10 +47,9 @@ urlpatterns = [
     path('requirements/process/<str:req_id>/', RequirementProcessView.as_view(), name='requirement_process'),
     path('requirements/complete/<str:req_id>/', RequirementCompleteView.as_view(), name='requirement_complete'),
     path('requirements/export/', RequirementExportView.as_view(), name='requirement_export'),
-    path('requirements/import/', RequirementImportView.as_view(), name='requirement_import'),
+    path('requirements/import/', RequirementZIPImportView.as_view(), name='requirement_import'),
     path('requirements/import/edit/', RequirementImportEditView.as_view(), name='requirement_import_edit'),
     path('requirements/export-response/<str:import_key>/', RequirementExportResponseView.as_view(), name='requirement_export_response'),
-    path('requirements/import-response/', RequirementImportResponseView.as_view(), name='requirement_import_response'),
     path('requirements/<str:req_id>/fields/', RequirementFieldConfigView.as_view(), name='requirement_field_config'),
     path('requirements/<str:req_id>/fields/add/', RequirementFieldAddView.as_view(), name='requirement_field_add'),
     path('requirements/<str:req_id>/fields/edit/<str:field_id>/', RequirementFieldEditView.as_view(), name='requirement_field_edit'),
@@ -62,12 +62,15 @@ urlpatterns = [
     path('task-documents/edit/<str:doc_id>/', TaskDocumentEditView.as_view(), name='task_document_edit'),
     path('task-documents/delete/<str:doc_id>/', TaskDocumentDeleteView.as_view(), name='task_document_delete'),
     path('task-documents/export/<str:doc_id>/', TaskDocumentExportView.as_view(), name='task_document_export'),
-    path('index-id/', IndexIdConfigListView.as_view(), name='index_id_config_list'),
-    path('index-id/create/', IndexIdConfigCreateView.as_view(), name='index_id_config_create'),
-    path('index-id/edit/<str:config_id>/', IndexIdConfigEditView.as_view(), name='index_id_config_edit'),
-    path('index-id/delete/<str:config_id>/', IndexIdConfigDeleteView.as_view(), name='index_id_config_delete'),
+    path('product-table/', ProductTableConfigListView.as_view(), name='product_table_config_list'),
+    path('product-table/create/', ProductTableConfigCreateView.as_view(), name='product_table_config_create'),
+    path('product-table/edit/<str:config_id>/', ProductTableConfigEditView.as_view(), name='product_table_config_edit'),
+    path('product-table/delete/<str:config_id>/', ProductTableConfigDeleteView.as_view(), name='product_table_config_delete'),
     path('test-cases/', TestCaseListView.as_view(), name='test_case_list'),
+    path('test-cases/create/', TestCaseCreateView.as_view(), name='test_case_create'),
+    path('test-cases/<str:case_id>/', TestCaseEditView.as_view(), name='test_case_edit'),
     path('automation-test/', AutomationTestResultView.as_view(), name='automation_test_result'),
+    path('automation-test/status/<str:batch_id>/', TestBatchStatusView.as_view(), name='automation_test_status'),
     path('generator/', SpringBootGeneratorView.as_view(), name='code_generator'),
     path('generator/download/', SpringBootDownloadView.as_view(), name='code_download'),
     path('sql-manager/', SqlManagerView.as_view(), name='sql_manager'),

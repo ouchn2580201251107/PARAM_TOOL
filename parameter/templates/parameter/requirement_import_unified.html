@@ -1,0 +1,37 @@
+{% extends 'parameter/base.html' %}
+
+{% block title %}导入需求ZIP{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-title"><i class="fas fa-upload"></i> 导入需求ZIP</div>
+        {% if error %}
+        <div style="color: #e74c3c; margin-bottom: 16px;">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>选择ZIP文件 *</label>
+                <input type="file" name="zip_file" accept=".zip" required>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary">导入</button>
+                <a href="/requirements/" class="btn btn-secondary">返回列表</a>
+            </div>
+        </form>
+        <div style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+            <strong>说明：</strong>
+            <ul>
+                <li>系统会自动识别上传的ZIP文件类型（需求文件或反馈文件）</li>
+                <li>需求文件格式：requirements_datetime.zip（含 requirement.csv）</li>
+                <li>反馈文件格式：requirements_datetime_response_datetime.zip（含 requirement_response.csv）</li>
+                <li>系统会验证version_hash确保版本匹配</li>
+                {% if request.user.role.role_code in 'admin,technical' %}
+                <li>技术人员导入需求文件后可进行编辑，导入反馈文件可查看技术调整内容</li>
+                {% else %}
+                <li>业务人员导入反馈文件可查看技术人员的调整内容和备注</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

@@ -11,6 +11,7 @@ import docx
 
 from ..auth_views import login_required, role_required
 from ..models import TaskDocument, Requirement
+from ..utils.pagination import paginate_queryset
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,15 @@ class TaskDocumentListView(View):
             
             is_editable = request.user.role.role_code in ['admin', 'technical']
             
+            pagination, docs = paginate_queryset(request, docs)
+            
             context = {
                 'docs': docs,
                 'req_no_filter': req_no_filter,
                 'type_filter': type_filter,
                 'types': TaskDocument.DOCUMENT_TYPE_CHOICES,
                 'is_editable': is_editable,
+                'pagination': pagination,
             }
             logger.info(f"[TaskDocumentListView] 任务书列表查询成功，即将渲染模板")
             return render(request, 'parameter/task_document_list.html', context)

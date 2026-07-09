@@ -14,13 +14,10 @@
             <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
             {% endif %}
             {% if is_business %}
-            <a href="/requirements/export/" class="btn btn-info">导出ZIP</a>
+            <button class="btn btn-info" onclick="exportZip()">导出</button>
             {% endif %}
-            {% if is_technical %}
-            <a href="/requirements/import/" class="btn btn-warning">导入ZIP</a>
-            {% endif %}
-            {% if is_business %}
-            <a href="/requirements/import-response/" class="btn btn-secondary">导入反馈ZIP</a>
+            {% if is_editable %}
+            <a href="/requirements/import/" class="btn btn-warning">导入</a>
             {% endif %}
             <div style="flex: 1; display: flex; align-items: center; gap: 10px; justify-content: flex-end;">
                 <input type="text" class="search-box" placeholder="搜索需求标题或编号" value="{{ search_name }}" onkeyup="if(event.keyCode==13) search()">
@@ -70,6 +67,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% include 'parameter/pagination.html' %}
     </div>
 
     <script>
@@ -117,6 +115,15 @@
                 ids.forEach(function(id) {
                     window.location.href = '/requirements/delete/' + id + '/';
                 });
+            }
+        }
+
+        function exportZip() {
+            var ids = getSelectedIds();
+            if (ids.length > 0) {
+                window.location.href = '/requirements/export/?ids=' + ids.join(',');
+            } else {
+                window.location.href = '/requirements/export/';
             }
         }
     </script>

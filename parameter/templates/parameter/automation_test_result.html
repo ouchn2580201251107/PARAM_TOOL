@@ -1,12 +1,13 @@
 {% extends 'parameter/base.html' %}
+{% load parameter_tags %}
 
-{% block title %}自动化测试结果{% endblock %}
+{% block title %}自动化测试{% endblock %}
 
 {% block content %}
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-number">{{ total }}</div>
-            <div class="stat-label">测试总数</div>
+            <div class="stat-label">自动化用例总数</div>
         </div>
         <div class="stat-card">
             <div class="stat-number">{{ passed }}</div>
@@ -23,10 +24,108 @@
     </div>
 
     <div class="card">
-        <div class="card-title"><i class="fas fa-robot"></i> 自动化测试部署 - 测试结果</div>
+        <div class="card-title"><i class="fas fa-play-circle"></i> 测试执行控制</div>
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <button class="btn btn-success" onclick="startTest()" id="startBtn">
+                <i class="fas fa-play"></i> 开始执行测试
+            </button>
+            <input type="text" id="batchDesc" class="search-box" placeholder="输入批次描述（可选）" style="width: 300px;">
+            <div id="runningStatus" style="display: none; padding: 8px 16px; background: #fff3cd; border-radius: 4px; color: #856404;">
+                <i class="fas fa-spinner fa-spin"></i> 测试执行中，请稍候...
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="progressCard" style="display: {% if latest_batch and latest_batch.status == 'running' %}block{% else %}none{% endif %};">
+        <div class="card-title"><i class="fas fa-tachometer-alt"></i> 当前执行进度 - <span id="batchNoDisplay">{{ latest_batch.batch_no|default:'' }}</span></div>
+        <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>进度</span>
+                <span id="progressText">{{ latest_batch.current_progress|floatformat:1|default:0 }}%</span>
+            </div>
+            <div style="height: 24px; background: #e9ecef; border-radius: 12px; overflow: hidden;">
+                <div id="progressBar" style="height: 100%; width: {{ latest_batch.current_progress|default:0 }}%; transition: width 0.5s ease, background 0.5s ease;"></div>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <div id="statCardTotal" style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 8px; transition: background 0.3s ease;">
+                <div id="statTotal" style="font-size: 24px; font-weight: 600; color: #333;">{{ latest_batch.total_cases|default:0 }}</div>
+                <div style="font-size: 12px; color: #888;">用例总数</div>
+            </div>
+            <div id="statCardPassed" style="text-align: center; padding: 12px; background: #d4edda; border-radius: 8px; transition: background 0.3s ease;">
+                <div id="statPassed" style="font-size: 24px; font-weight: 600; color: #155724;">{{ latest_batch.passed_count|default:0 }}</div>
+                <div style="font-size: 12px; color: #155724;">通过</div>
+            </div>
+            <div id="statCardFailed" style="text-align: center; padding: 12px; background: #f8d7da; border-radius: 8px; transition: background 0.3s ease;">
+                <div id="statFailed" style="font-size: 24px; font-weight: 600; color: #721c24;">{{ latest_batch.failed_count|default:0 }}</div>
+                <div style="font-size: 12px; color: #721c24;">失败</div>
+            </div>
+            <div id="statCardPassRate" style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 8px; transition: background 0.3s ease;">
+                <div id="statPassRate" style="font-size: 24px; font-weight: 600;">{{ latest_batch.pass_rate|default:0 }}%</div>
+                <div style="font-size: 12px; color: #888;">通过率</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fas fa-history"></i> 测试批次历史</div>
         <table class="table">
             <thead>
                 <tr>
+                    <th>批次编号</th>
+                    <th>描述</th>
+                    <th>状态</th>
+                    <th>用例总数</th>
+                    <th>通过</th>
+                    <th>失败</th>
+                    <th>跳过</th>
+                    <th>通过率</th>
+                    <th>执行时长</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for batch in batch_stats %}
+                <tr {% if batch.id == selected_batch_id|add:0 %}style="background: #e3f2fd;"{% endif %}>
+                    <td><strong><a href="?batch_id={{ batch.id }}" {% if batch.id == selected_batch_id|add:0 %}style="color: #094194; font-weight: bold;"{% endif %}>{{ batch.batch_no }}</a></strong></td>
+                    <td>{{ batch.description|default:'-' }}</td>
+                    <td><span class="badge badge-{{ batch.status }}">{{ batch.status }}</span></td>
+                    <td>{{ batch.total }}</td>
+                    <td>{{ batch.passed }}</td>
+                    <td>{{ batch.failed }}</td>
+                    <td>{{ batch.skipped|default:0 }}</td>
+                    <td>
+                        <span style="font-weight: 600; color: {{ batch.pass_rate|get_pass_rate_color }}; transition: color 0.3s ease;">{{ batch.pass_rate }}%</span>
+                    </td>
+                    <td>{{ batch.duration|default:'-' }}秒</td>
+                    <td>{{ batch.created_at }}</td>
+                    <td>
+                        <a href="?batch_id={{ batch.id }}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i> 查看明细</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="11" style="text-align: center;">暂无测试批次，请点击上方按钮开始执行测试</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include 'parameter/pagination.html' with pagination=batch_pagination %}
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            <i class="fas fa-robot"></i> 测试结果明细
+            {% if selected_batch %}
+            <span style="font-size: 14px; font-weight: normal; margin-left: 16px;">
+                当前查看: <strong>{{ selected_batch.batch_no }}</strong>
+                <a href="?" style="margin-left: 12px; color: #094194;">[查看全部]</a>
+            </span>
+            {% endif %}
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>批次编号</th>
                     <th>用例编号</th>
                     <th>用例标题</th>
                     <th>执行日期</th>
@@ -38,17 +137,184 @@
             <tbody>
                 {% for result in results %}
                 <tr>
-                    <td>{{ result.case_no }}</td>
-                    <td>{{ result.case_title }}</td>
+                    <td>{{ result.test_batch.batch_no|default:'-' }}</td>
+                    <td>{{ result.test_case.case_no }}</td>
+                    <td>{{ result.test_case.title }}</td>
                     <td>{{ result.execution_date }}</td>
-                    <td><span class="badge badge-{{ result.status }}">{{ result.status }}</span></td>
+                    <td><span class="badge badge-{{ result.status }}">{{ result.get_status_display }}</span></td>
                     <td>{{ result.error_message|default:'-'|truncatechars:100 }}</td>
                     <td>{{ result.duration|default:'-' }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" style="text-align: center;">暂无测试结果</td></tr>
+                <tr><td colspan="7" style="text-align: center;">暂无测试结果</td></tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% include 'parameter/pagination.html' with pagination=pagination %}
     </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var progressInterval = null;
+
+function startTest() {
+    var btn = document.getElementById('startBtn');
+    var statusDiv = document.getElementById('runningStatus');
+    var desc = document.getElementById('batchDesc').value;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在创建...';
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试执行中，请稍候...';
+    statusDiv.style.background = '#fff3cd';
+    statusDiv.style.color = '#856404';
+    
+    fetch('/automation-test/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=start_test&description=' + encodeURIComponent(desc)
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-play"></i> 开始执行测试';
+            btn.disabled = false;
+            startProgressPolling(data.batch_id);
+        } else {
+            alert('创建失败: ' + data.message);
+            btn.innerHTML = '<i class="fas fa-play"></i> 开始执行测试';
+            btn.disabled = false;
+            statusDiv.style.display = 'none';
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+        btn.innerHTML = '<i class="fas fa-play"></i> 开始执行测试';
+        btn.disabled = false;
+        statusDiv.style.display = 'none';
+    });
+}
+
+function getPassRateColor(passRate) {
+    try {
+        var rate = parseFloat(passRate);
+    } catch (e) {
+        return '#95a5a6';
+    }
+    
+    if (rate >= 70) {
+        var ratio = (rate - 70) / 30;
+        var r = Math.round(45 + ratio * 46);
+        var g = Math.round(174 + ratio * 68);
+        var b = Math.round(96 + ratio * 5);
+    } else if (rate >= 30) {
+        var ratio = (rate - 30) / 40;
+        var r = Math.round(243 - ratio * 11);
+        var g = Math.round(156 + ratio * 92);
+        var b = Math.round(18 + ratio * 41);
+    } else {
+        var ratio = rate / 30;
+        var r = Math.round(192 + ratio * 85);
+        var g = Math.round(57 + ratio * 137);
+        var b = Math.round(43 + ratio * 53);
+    }
+    
+    return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+}
+
+function startProgressPolling(batchId) {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+    }
+    
+    var progressCard = document.getElementById('progressCard');
+    progressCard.style.display = 'block';
+    
+    progressInterval = setInterval(function() {
+        fetch('/automation-test/status/' + batchId + '/')
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                var batchNoDisplay = document.getElementById('batchNoDisplay');
+                if (batchNoDisplay) {
+                    batchNoDisplay.textContent = data.batch_no;
+                }
+                
+                var progressBar = document.getElementById('progressBar');
+                if (progressBar) {
+                    progressBar.style.width = data.current_progress + '%';
+                    var passRateColor = getPassRateColor(data.pass_rate);
+                    progressBar.style.background = 'linear-gradient(90deg, ' + passRateColor + ', ' + getPassRateColor(Math.min(data.pass_rate + 15, 100)) + ')';
+                }
+                
+                var progressText = document.getElementById('progressText');
+                if (progressText) {
+                    progressText.textContent = data.current_progress.toFixed(1) + '%';
+                    progressText.style.color = getPassRateColor(data.pass_rate);
+                }
+                
+                var statTotal = document.getElementById('statTotal');
+                if (statTotal) {
+                    statTotal.textContent = data.total_cases;
+                }
+                
+                var statPassed = document.getElementById('statPassed');
+                if (statPassed) {
+                    statPassed.textContent = data.passed_count;
+                }
+                
+                var statFailed = document.getElementById('statFailed');
+                if (statFailed) {
+                    statFailed.textContent = data.failed_count;
+                }
+                
+                var statPassRate = document.getElementById('statPassRate');
+                var statCardPassRate = document.getElementById('statCardPassRate');
+                var passRateColor = getPassRateColor(data.pass_rate);
+                if (statPassRate) {
+                    statPassRate.textContent = data.pass_rate + '%';
+                    statPassRate.style.color = passRateColor;
+                }
+                if (statCardPassRate) {
+                    statCardPassRate.style.background = passRateColor + '15';
+                }
+                
+                var statusDiv = document.getElementById('runningStatus');
+                if (statusDiv) {
+                    if (data.status === 'completed') {
+                        var completeColor = getPassRateColor(data.pass_rate);
+                        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 测试执行完成，通过率: ' + data.pass_rate + '%';
+                        statusDiv.style.background = completeColor + '30';
+                        statusDiv.style.color = completeColor;
+                        clearInterval(progressInterval);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else if (data.status === 'failed') {
+                        statusDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> 测试执行失败';
+                        statusDiv.style.background = '#f8d7da';
+                        statusDiv.style.color = '#721c24';
+                        clearInterval(progressInterval);
+                    } else if (data.status === 'running') {
+                        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试执行中... ' + data.current_progress.toFixed(1) + '%';
+                        statusDiv.style.background = '#fff3cd';
+                        statusDiv.style.color = '#856404';
+                    }
+                }
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+        });
+    }, 800);
+}
+</script>
 {% endblock %}

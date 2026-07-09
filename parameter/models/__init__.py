@@ -5,8 +5,8 @@
 
 from .core import ParameterTable, Metadata, FieldDefinition
 from .requirement import Requirement, TaskDocument, ConfigScript, RequirementFieldConfig
-from .test import TestCase, AutomationTestResult
-from .config import IndexIdConfig
+from .test import TestCase, AutomationTestResult, TestBatch
+from .config import ProductTableConfig
 from .auth import Role, User
 
 __all__ = [
@@ -19,7 +19,8 @@ __all__ = [
     'RequirementFieldConfig',
     'TestCase',
     'AutomationTestResult',
-    'IndexIdConfig',
+    'TestBatch',
+    'ProductTableConfig',
     'Role',
     'User',
 ]

@@ -159,6 +159,7 @@ class UserCreateView(View):
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
         real_name = request.POST.get('real_name')
+        employee_id = request.POST.get('employee_id')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         role_id = request.POST.get('role')
@@ -179,6 +180,14 @@ class UserCreateView(View):
                 'error': '两次输入的密码不一致'
             })
         
+        if employee_id:
+            if not employee_id.isdigit() or len(employee_id) < 5 or len(employee_id) > 7:
+                roles = Role.objects.all()
+                return render(request, 'parameter/user_create.html', {
+                    'roles': roles,
+                    'error': '工号必须为5-7位纯数字'
+                })
+        
         try:
             if User.objects.filter(username=username).exists():
                 roles = Role.objects.all()
@@ -187,10 +196,18 @@ class UserCreateView(View):
                     'error': '用户名已存在'
                 })
             
+            if employee_id and User.objects.filter(employee_id=employee_id).exists():
+                roles = Role.objects.all()
+                return render(request, 'parameter/user_create.html', {
+                    'roles': roles,
+                    'error': '工号已存在'
+                })
+            
             role = Role.objects.get(id=role_id)
             user = User(
                 username=username,
                 real_name=real_name,
+                employee_id=employee_id,
                 email=email,
                 phone=phone,
                 role=role
@@ -231,6 +248,7 @@ class UserEditView(View):
     
     def post(self, request, user_id):
         real_name = request.POST.get('real_name')
+        employee_id = request.POST.get('employee_id')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         role_id = request.POST.get('role')
@@ -238,11 +256,31 @@ class UserEditView(View):
         
         logger.info(f"[UserEditView] 管理员 {request.user.username} 更新用户信息，user_id: {user_id}")
         
+        if employee_id:
+            if not employee_id.isdigit() or len(employee_id) < 5 or len(employee_id) > 7:
+                user = User.objects.get(id=user_id)
+                roles = Role.objects.all()
+                return render(request, 'parameter/user_edit.html', {
+                    'user': user,
+                    'roles': roles,
+                    'error': '工号必须为5-7位纯数字'
+                })
+        
         try:
             user = User.objects.get(id=user_id)
+            
+            if employee_id and User.objects.filter(employee_id=employee_id).exclude(id=user_id).exists():
+                roles = Role.objects.all()
+                return render(request, 'parameter/user_edit.html', {
+                    'user': user,
+                    'roles': roles,
+                    'error': '工号已存在'
+                })
+            
             role = Role.objects.get(id=role_id)
             
             user.real_name = real_name
+            user.employee_id = employee_id
             user.email = email
             user.phone = phone
             user.role = role

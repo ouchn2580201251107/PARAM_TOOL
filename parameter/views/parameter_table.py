@@ -5,12 +5,35 @@
 import logging
 from django.shortcuts import render, redirect
 from django.views import View
+from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 
 from ..auth_views import login_required, role_required
-from ..models import ParameterTable, FieldDefinition, Metadata
+from ..models import ParameterTable, FieldDefinition, Metadata, ProductTableConfig
+from ..utils.pagination import paginate_queryset
 
 logger = logging.getLogger(__name__)
+
+
+class ProductTableConfigWrapper:
+    """
+    成品表复用配置包装类
+    将ProductTableConfig转换为类似ParameterTable的结构，用于在参数表清单中统一展示
+    """
+    def __init__(self, config):
+        self.id = f'config_{config.id}'
+        self.name_en = config.table_name
+        self.name = config.business_name
+        self.business_description = config.business_description or ''
+        self.domain = config.product_table
+        self.owner = ''
+        self.status = 'active'
+        self.is_simple = True
+        self.version = 1
+        self.updated_at = config.created_at
+    
+    def get_status_display(self):
+        return '启用'
 
 
 @method_decorator(login_required, name='dispatch')
@@ -18,12 +41,21 @@ class ParameterTableListView(View):
     """
     参数表列表视图
     展示所有参数表的业务说明底账，支持按业务领域、状态和名称搜索过滤
+    同时展示成品表复用配置作为SIMPLE类型的参数表
     """
     def get(self, request):
         logger.info(f"[ParameterTableListView] 开始查询参数表清单，请求路径: {request.path}")
         try:
-            tables = ParameterTable.objects.all()
-            logger.info(f"[ParameterTableListView] 初始查询参数表记录数: {tables.count()}")
+            tables = list(ParameterTable.objects.all())
+            logger.info(f"[ParameterTableListView] 初始查询参数表记录数: {len(tables)}")
+            
+            product_configs = ProductTableConfig.objects.all()
+            for config in product_configs:
+                wrapper = ProductTableConfigWrapper(config)
+                exists = any(t.name_en == wrapper.name_en and t.is_simple for t in tables)
+                if not exists:
+                    tables.append(wrapper)
+            logger.info(f"[ParameterTableListView] 合并成品表复用配置后记录数: {len(tables)}")
             
             domain_filter = request.GET.get('domain', '')
             status_filter = request.GET.get('status', '')
@@ -32,23 +64,28 @@ class ParameterTableListView(View):
             logger.info(f"[ParameterTableListView] 查询条件 - domain: '{domain_filter}', status: '{status_filter}', search: '{search_name}'")
             
             if domain_filter:
-                tables = tables.filter(domain=domain_filter)
-                logger.info(f"[ParameterTableListView] 按domain过滤后记录数: {tables.count()}")
+                tables = [t for t in tables if getattr(t, 'domain', '') == domain_filter]
+                logger.info(f"[ParameterTableListView] 按domain过滤后记录数: {len(tables)}")
             
             if status_filter:
-                tables = tables.filter(status=status_filter)
-                logger.info(f"[ParameterTableListView] 按status过滤后记录数: {tables.count()}")
+                tables = [t for t in tables if getattr(t, 'status', '') == status_filter]
+                logger.info(f"[ParameterTableListView] 按status过滤后记录数: {len(tables)}")
             
             if search_name:
-                tables = tables.filter(name_en__icontains=search_name) | tables.filter(name__icontains=search_name) | tables.filter(business_description__icontains=search_name)
-                logger.info(f"[ParameterTableListView] 按搜索词过滤后记录数: {tables.count()}")
+                tables = [t for t in tables 
+                          if search_name.lower() in getattr(t, 'name_en', '').lower() 
+                          or search_name.lower() in getattr(t, 'name', '').lower() 
+                          or search_name.lower() in getattr(t, 'business_description', '').lower()]
+                logger.info(f"[ParameterTableListView] 按搜索词过滤后记录数: {len(tables)}")
             
-            domains = ParameterTable.objects.values_list('domain', flat=True).distinct()
-            logger.info(f"[ParameterTableListView] 获取到 {len(list(domains))} 个不同的业务领域")
+            domains = set(t.domain for t in tables if hasattr(t, 'domain'))
+            logger.info(f"[ParameterTableListView] 获取到 {len(domains)} 个不同的业务领域")
             
             statuses = [{'value': 'draft', 'label': '草稿'}, {'value': 'active', 'label': '启用'}, {'value': 'deprecated', 'label': '废弃'}]
             
             is_editable = request.user.role.role_code in ['admin', 'technical']
+            
+            pagination, tables = paginate_queryset(request, tables)
             
             context = {
                 'tables': tables,
@@ -58,6 +95,7 @@ class ParameterTableListView(View):
                 'status_filter': status_filter,
                 'search_name': search_name,
                 'is_editable': is_editable,
+                'pagination': pagination,
             }
             logger.info(f"[ParameterTableListView] 参数表清单查询成功，即将渲染模板")
             return render(request, 'parameter/table_list.html', context)
@@ -71,17 +109,55 @@ class ParameterTableDetailView(View):
     """
     参数表详情视图
     展示参数表的详细信息，包括字段定义列表
+    同时支持展示成品表复用配置的详情
     """
     def get(self, request, table_id):
         logger.info(f"[ParameterTableDetailView] 开始查询参数表详情，table_id: {table_id}")
         try:
-            table = ParameterTable.objects.filter(id=table_id).first()
-            logger.info(f"[ParameterTableDetailView] 参数表查询结果: {'存在' if table else '不存在'}, table_id: {table_id}")
-            
-            fields = FieldDefinition.objects.filter(parameter_table_id=table_id).order_by('sort_order')
-            logger.info(f"[ParameterTableDetailView] 字段定义查询完成，记录数: {fields.count()}")
-            
-            is_editable = request.user.role.role_code in ['admin', 'technical']
+            if table_id.startswith('config_'):
+                config_id = table_id.replace('config_', '')
+                config = ProductTableConfig.objects.filter(id=config_id).first()
+                if not config:
+                    logger.error(f"[ParameterTableDetailView] 成品表复用配置不存在，config_id: {config_id}")
+                    return render(request, 'parameter/error.html', {'message': '成品表复用配置不存在'})
+                
+                table = ProductTableConfigWrapper(config)
+                
+                fields = []
+                if config.product_table == 'SIMPLE':
+                    fields = [
+                        {'field_name': 'INDEXID', 'display_name': '索引标识', 'field_type': 'string', 'length': 50, 'control_type': 'input', 'is_required': True},
+                        {'field_name': 'CODE', 'display_name': '编码', 'field_type': 'string', 'length': 50, 'control_type': 'input', 'is_required': True},
+                        {'field_name': 'CNAME', 'display_name': '中文名称', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'ENAME', 'display_name': '英文名称', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'OTHERS', 'display_name': '其他信息', 'field_type': 'text', 'length': None, 'control_type': 'textarea', 'is_required': False},
+                    ]
+                elif config.product_table == 'GOODS':
+                    fields = [
+                        {'field_name': 'CODE1', 'display_name': '编码1', 'field_type': 'string', 'length': 50, 'control_type': 'input', 'is_required': True},
+                        {'field_name': 'CNAME1', 'display_name': '中文名称1', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'ENAME1', 'display_name': '英文名称1', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'CODE3', 'display_name': '编码3', 'field_type': 'string', 'length': 50, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'CNAME3', 'display_name': '中文名称3', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'ENAME3', 'display_name': '英文名称3', 'field_type': 'string', 'length': 200, 'control_type': 'input', 'is_required': False},
+                        {'field_name': 'TAG', 'display_name': '标签', 'field_type': 'string', 'length': 50, 'control_type': 'input', 'is_required': True},
+                        {'field_name': 'BEGIN_DATE', 'display_name': '开始日期', 'field_type': 'date', 'length': None, 'control_type': 'datepicker', 'is_required': False},
+                        {'field_name': 'END_DATE', 'display_name': '结束日期', 'field_type': 'date', 'length': None, 'control_type': 'datepicker', 'is_required': False},
+                    ]
+                
+                is_editable = False
+            else:
+                table = ParameterTable.objects.filter(id=table_id).first()
+                logger.info(f"[ParameterTableDetailView] 参数表查询结果: {'存在' if table else '不存在'}, table_id: {table_id}")
+                
+                if not table:
+                    logger.error(f"[ParameterTableDetailView] 参数表不存在，table_id: {table_id}")
+                    return render(request, 'parameter/error.html', {'message': '参数表不存在'})
+                
+                fields = FieldDefinition.objects.filter(parameter_table_id=table_id).order_by('sort_order')
+                logger.info(f"[ParameterTableDetailView] 字段定义查询完成，记录数: {fields.count()}")
+                
+                is_editable = request.user.role.role_code in ['admin', 'technical']
             
             context = {
                 'table': table,
@@ -513,3 +589,26 @@ class FieldDeleteView(View):
         except FieldDefinition.DoesNotExist:
             logger.error(f"[FieldDeleteView] 字段不存在，field_id: {field_id}")
             return render(request, 'parameter/error.html', {'message': '字段不存在'})
+
+
+@method_decorator(login_required, name='dispatch')
+class ParameterTableAPIVIew(View):
+    """
+    参数表API视图
+    返回参数表列表的JSON数据，用于前端下拉选择
+    """
+    def get(self, request):
+        logger.info(f"[ParameterTableAPIVIew] 获取参数表列表API")
+        try:
+            tables = ParameterTable.objects.all()
+            data = []
+            for table in tables:
+                data.append({
+                    'id': table.id,
+                    'name_en': table.name_en,
+                    'name': table.name,
+                })
+            return JsonResponse(data, safe=False)
+        except Exception as e:
+            logger.error(f"[ParameterTableAPIVIew] 获取参数表列表失败: {str(e)}", exc_info=True)
+            return JsonResponse([], safe=False)

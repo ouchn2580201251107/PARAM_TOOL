@@ -48,6 +48,10 @@
         .badge-passed { background: #27ae60; color: white; }
         .badge-failed { background: #e74c3c; color: white; }
         .badge-skipped { background: #95a5a6; color: white; }
+        .badge-admin { background: #e74c3c; color: white; }
+        .badge-business { background: #3498db; color: white; }
+        .badge-technical { background: #27ae60; color: white; }
+        .badge-general { background: #95a5a6; color: white; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-size: 14px; font-weight: 500; color: #555; margin-bottom: 6px; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
@@ -87,7 +91,7 @@
         <a href="/requirements/" class="nav-item {% if 'requirements' in request.path %}active{% endif %}"><i class="fas fa-pencil-alt"></i> 需求登记</a>
         <a href="/task-documents/" class="nav-item {% if 'task-documents' in request.path %}active{% endif %}"><i class="fas fa-file-alt"></i> 任务书管理</a>
         
-        <a href="/index-id/" class="nav-item {% if 'index-id' in request.path %}active{% endif %}"><i class="fas fa-key"></i> INDEXID配置</a>
+        <a href="/product-table/" class="nav-item {% if 'product-table' in request.path %}active{% endif %}"><i class="fas fa-key"></i> 成品表复用配置</a>
         <a href="/test-cases/" class="nav-item {% if 'test-cases' in request.path %}active{% endif %}"><i class="fas fa-flask"></i> 测试用例</a>
         <a href="/automation-test/" class="nav-item {% if 'automation-test' in request.path %}active{% endif %}"><i class="fas fa-robot"></i> 自动化测试</a>
         <a href="/generator/" class="nav-item {% if 'generator' in request.path %}active{% endif %}"><i class="fas fa-code"></i> 代码生成</a>

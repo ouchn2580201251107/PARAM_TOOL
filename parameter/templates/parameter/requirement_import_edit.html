@@ -9,7 +9,8 @@
             {% csrf_token %}
             <input type="hidden" name="import_key" value="{{ import_key }}">
             
-            {% for i, item in imported_data %}
+            {% for item in imported_data %}
+            {% with i=forloop.counter0 %}
             <div style="border: 1px solid #eee; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
                 <div style="font-weight: 600; margin-bottom: 12px; color: #333;">需求编号: {{ item.requirement_no }}</div>
                 
@@ -74,6 +75,7 @@
                     <textarea name="item_{{ i }}_tech_comments" rows="2" placeholder="输入技术调整说明">{{ item.tech_comments }}</textarea>
                 </div>
             </div>
+            {% endwith %}
             {% endfor %}
             
             <div style="margin-top: 20px;">

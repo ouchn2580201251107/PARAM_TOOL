@@ -17,6 +17,7 @@
                     <th><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
                     <th>用户名</th>
                     <th>真实姓名</th>
+                    <th>工号</th>
                     <th>角色</th>
                     <th>邮箱</th>
                     <th>手机号</th>
@@ -32,6 +33,7 @@
                     <td><input type="checkbox" class="row-select" value="{{ user.id }}" {% if user.role.role_code == 'admin' and user.username == current_user.username %}disabled{% endif %}></td>
                     <td>{{ user.username }}</td>
                     <td>{{ user.real_name }}</td>
+                    <td>{{ user.employee_id|default:'-' }}</td>
                     <td>
                         <span class="badge badge-{{ user.role.role_code }}">{{ user.role.role_name }}</span>
                     </td>

@@ -40,6 +40,7 @@ class User(models.Model):
     username = models.CharField(max_length=100, unique=True, verbose_name='用户名')
     password = models.CharField(max_length=255, verbose_name='密码')
     real_name = models.CharField(max_length=100, verbose_name='真实姓名')
+    employee_id = models.CharField(max_length=7, unique=True, null=True, blank=True, verbose_name='工号')
     email = models.EmailField(null=True, blank=True, verbose_name='邮箱')
     phone = models.CharField(max_length=20, null=True, blank=True, verbose_name='手机号')
     role = models.ForeignKey('Role', on_delete=models.CASCADE, verbose_name='角色')

@@ -22,13 +22,13 @@
             <span class="label">负责人：</span><span class="value">{{ table.owner }}</span>
         </div>
         <div class="detail-info">
-            <span class="label">状态：</span><span class="value"><span class="badge badge-{{ table.status }}">{{ table.status }}</span></span>
+            <span class="label">状态：</span><span class="value"><span class="badge badge-{{ table.status }}">{{ table.get_status_display }}</span></span>
         </div>
         <div class="detail-info">
             <span class="label">版本：</span><span class="value">V{{ table.version }}</span>
         </div>
         <div class="detail-info">
-            <span class="label">创建日期：</span><span class="value">{{ table.created_at }}</span>
+            <span class="label">创建日期：</span><span class="value">{{ table.created_at|default:table.updated_at }}</span>
         </div>
         <div class="detail-info">
             <span class="label">最后更新：</span><span class="value">{{ table.updated_at }}</span>
@@ -36,7 +36,7 @@
         <div style="margin-top: 16px;">
             <a href="/tables/" class="btn btn-primary">返回列表</a>
             {% if not table.is_simple %}
-            <a href="/tables/{{ table.id }}/fields/" class="btn btn-info btn-sm">字段配置</a>
+            <a href="/tables/{{ table.id }}/fields/" class="btn btn-primary"><i class="fas fa-columns"></i> 字段配置</a>
             {% endif %}
         </div>
     </div>
@@ -61,16 +61,16 @@
             <tbody>
                 {% for field in fields %}
                 <tr>
-                    <td>{{ field.sort_order }}</td>
+                    <td>{{ field.sort_order|default:forloop.counter }}</td>
                     <td>{{ field.field_name }}</td>
                     <td>{{ field.display_name }}</td>
                     <td>{{ field.field_type }}</td>
                     <td>{{ field.length|default:'-' }}</td>
                     <td>{{ field.control_type }}</td>
-                    <td>{{ field.get_storage_type_display }}</td>
-                    <td>{% if field.is_required == 'True' %}是{% else %}否{% endif %}</td>
-                    <td>{% if field.is_visible == 'True' %}是{% else %}否{% endif %}</td>
-                    <td>{% if field.is_custom == 'True' %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.get_storage_type_display %}{{ field.get_storage_type_display }}{% else %}-{% endif %}</td>
+                    <td>{% if field.is_required %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.is_visible == None or field.is_visible %}是{% else %}否{% endif %}</td>
+                    <td>{% if field.is_custom %}是{% else %}否{% endif %}</td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="10" style="text-align: center;">暂无字段定义</td></tr>

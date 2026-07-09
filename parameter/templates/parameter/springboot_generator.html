@@ -9,14 +9,26 @@
         <div class="form-row">
             <div class="form-group" style="flex: 1;">
                 <label>选择参数表 <span style="color: #e74c3c;">*</span></label>
-                <div class="custom-select-wrapper">
-                    <select name="tables" multiple required class="custom-select">
-                        {% for table in tables %}
-                        <option value="{{ table.id }}" {% if table.id|stringformat:"s" in selected_tables %}selected{% endif %}>{{ table.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="select-hint">按住 Ctrl 键可多选</div>
+                <div class="search-multi-select">
+                    <div class="search-multi-select-header" onclick="toggleSelectDropdown()">
+                        <div class="search-multi-select-tags" id="selectedTags">
+                            <span class="placeholder">请选择参数表</span>
+                        </div>
+                        <i class="fas fa-chevron-down" id="dropdownArrow"></i>
+                    </div>
+                    <div class="search-multi-select-dropdown" id="selectDropdown">
+                        <input type="text" class="search-input" placeholder="搜索参数表..." oninput="filterOptions()">
+                        <ul class="options-list" id="optionsList">
+                            {% for table in tables %}
+                            <li data-value="{{ table.id }}" {% if table.id|stringformat:"s" in selected_tables %}class="selected"{% endif %}>
+                                <input type="checkbox" name="tables" value="{{ table.id }}" {% if table.id|stringformat:"s" in selected_tables %}checked{% endif %} onchange="updateSelection(this)">
+                                <span>{{ table.name }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
+                <div class="select-hint">输入关键词搜索，点击选项可多选</div>
             </div>
             <div class="form-group" style="width: 280px;">
                 <label>包名</label>
@@ -73,45 +85,134 @@
         align-items: flex-start;
     }
     
-    .custom-select-wrapper {
+    .search-multi-select {
         position: relative;
+        width: 100%;
     }
     
-    .custom-select {
-        width: 100%;
-        height: 180px;
+    .search-multi-select-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 10px 12px;
         border: 1px solid #ddd;
         border-radius: 8px;
-        font-size: 14px;
-        background-color: white;
-        color: #333;
         cursor: pointer;
-        outline: none;
-        transition: all 0.3s;
-        appearance: none;
+        background-color: white;
+        min-height: 42px;
+        transition: all 0.2s;
     }
     
-    .custom-select:focus {
+    .search-multi-select-header:hover {
+        border-color: #094194;
+    }
+    
+    .search-multi-select-header:focus-within {
         border-color: #094194;
         box-shadow: 0 0 0 3px rgba(9, 65, 148, 0.1);
     }
     
-    .custom-select option {
-        padding: 8px 12px;
-        font-size: 14px;
-        background-color: white;
-        color: #333;
+    .search-multi-select-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        flex: 1;
+        min-height: 24px;
     }
     
-    .custom-select option:hover,
-    .custom-select option:focus {
+    .search-multi-select-tags .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        background-color: #094194;
+        color: white;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    
+    .search-multi-select-tags .tag .remove {
+        margin-left: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+    }
+    
+    .search-multi-select-tags .placeholder {
+        color: #999;
+        font-size: 14px;
+    }
+    
+    .search-multi-select-header i {
+        color: #666;
+        transition: transform 0.2s;
+    }
+    
+    .search-multi-select-header.open i {
+        transform: rotate(180deg);
+    }
+    
+    .search-multi-select-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 1000;
+        display: none;
+        max-height: 300px;
+        overflow: hidden;
+        flex-direction: column;
+    }
+    
+    .search-multi-select-dropdown.open {
+        display: flex;
+    }
+    
+    .search-input {
+        padding: 10px 12px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .options-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        flex: 1;
+        max-height: 250px;
+    }
+    
+    .options-list li {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.15s;
+    }
+    
+    .options-list li:hover {
+        background-color: #f5f7fa;
+    }
+    
+    .options-list li.selected {
         background-color: #e8f0fe;
     }
     
-    .custom-select option:checked {
-        background-color: #094194;
-        color: white;
+    .options-list li input[type="checkbox"] {
+        margin-right: 10px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
     }
     
     .select-hint {
@@ -193,5 +294,107 @@
         event.target.classList.add('active');
         document.getElementById(tabName).classList.add('active');
     }
+
+    function toggleSelectDropdown() {
+        var header = document.querySelector('.search-multi-select-header');
+        var dropdown = document.getElementById('selectDropdown');
+        header.classList.toggle('open');
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            document.querySelector('.search-input').focus();
+        }
+    }
+
+    function filterOptions() {
+        var input = document.querySelector('.search-input');
+        var filter = input.value.toLowerCase();
+        var options = document.querySelectorAll('.options-list li');
+        options.forEach(function(option) {
+            var text = option.querySelector('span').textContent.toLowerCase();
+            option.style.display = text.includes(filter) ? 'flex' : 'none';
+        });
+    }
+
+    function updateSelection(checkbox) {
+        var li = checkbox.closest('li');
+        var tagsContainer = document.getElementById('selectedTags');
+        var placeholder = tagsContainer.querySelector('.placeholder');
+        
+        if (checkbox.checked) {
+            li.classList.add('selected');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            var tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.dataset.value = checkbox.value;
+            tag.innerHTML = checkbox.nextElementSibling.textContent + ' <span class="remove" onclick="removeTag(this)">&times;</span>';
+            tagsContainer.appendChild(tag);
+        } else {
+            li.classList.remove('selected');
+            var tag = tagsContainer.querySelector('.tag[data-value="' + checkbox.value + '"]');
+            if (tag) {
+                tag.remove();
+            }
+            if (tagsContainer.children.length === 0) {
+                var span = document.createElement('span');
+                span.className = 'placeholder';
+                span.textContent = '请选择参数表';
+                tagsContainer.appendChild(span);
+            }
+        }
+    }
+
+    function removeTag(element) {
+        var tag = element.closest('.tag');
+        var value = tag.dataset.value;
+        var checkbox = document.querySelector('input[type="checkbox"][value="' + value + '"]');
+        if (checkbox) {
+            checkbox.checked = false;
+            updateSelection(checkbox);
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        var container = document.querySelector('.search-multi-select');
+        if (!container.contains(event.target)) {
+            var header = document.querySelector('.search-multi-select-header');
+            var dropdown = document.getElementById('selectDropdown');
+            header.classList.remove('open');
+            dropdown.classList.remove('open');
+        }
+    });
+
+    document.querySelectorAll('.options-list li').forEach(function(li) {
+        li.addEventListener('click', function(event) {
+            if (event.target.tagName !== 'INPUT') {
+                var checkbox = this.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                updateSelection(checkbox);
+            }
+        });
+    });
+
+    function updateTagsFromChecked() {
+        var tagsContainer = document.getElementById('selectedTags');
+        var checked = document.querySelectorAll('input[name="tables"]:checked');
+        tagsContainer.innerHTML = '';
+        if (checked.length === 0) {
+            var span = document.createElement('span');
+            span.className = 'placeholder';
+            span.textContent = '请选择参数表';
+            tagsContainer.appendChild(span);
+        } else {
+            checked.forEach(function(checkbox) {
+                var tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.dataset.value = checkbox.value;
+                tag.innerHTML = checkbox.nextElementSibling.textContent + ' <span class="remove" onclick="removeTag(this)">&times;</span>';
+                tagsContainer.appendChild(tag);
+            });
+        }
+    }
+
+    updateTagsFromChecked();
 </script>
 {% endblock %}

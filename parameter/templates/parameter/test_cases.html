@@ -1,10 +1,67 @@
 {% extends 'parameter/base.html' %}
+{% load parameter_tags %}
 
 {% block title %}测试用例{% endblock %}
 
 {% block content %}
+    {% if is_technical %}
     <div class="card">
-        <div class="card-title"><i class="fas fa-flask"></i> 测试用例生成</div>
+        <div class="card-title"><i class="fas fa-plus-circle"></i> 测试用例管理</div>
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <button class="btn btn-success" onclick="showGenerateModal()">
+                <i class="fas fa-magic"></i> 测试用例生成
+            </button>
+            <a href="/test-cases/create/" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 手动新增测试用例
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-title"><i class="fas fa-search"></i> 搜索筛选</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <input type="text" id="req_no_filter" class="search-box" placeholder="需求编号" value="{{ req_no_filter }}">
+            <input type="text" id="table_name_filter" class="search-box" placeholder="表名" value="{{ table_name_filter }}">
+            <select id="type_filter" class="search-box">
+                <option value="">全部类型</option>
+                {% for type in types %}
+                <option value="{{ type.0 }}" {% if type_filter == type.0 %}selected{% endif %}>{{ type.1 }}</option>
+                {% endfor %}
+            </select>
+            <select id="status_filter" class="search-box">
+                <option value="">全部状态</option>
+                {% for status in statuses %}
+                <option value="{{ status.0 }}" {% if status_filter == status.0 %}selected{% endif %}>{{ status.1 }}</option>
+                {% endfor %}
+            </select>
+            <select id="confirmed_filter" class="search-box">
+                <option value="">全部确认状态</option>
+                <option value="true" {% if confirmed_filter == 'true' %}selected{% endif %}>已确认</option>
+                <option value="false" {% if confirmed_filter == 'false' %}selected{% endif %}>待确认</option>
+            </select>
+            <button class="btn btn-primary" onclick="applyFilters()">搜索</button>
+            <button class="btn btn-secondary" onclick="clearFilters()">重置</button>
+        </div>
+        <div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <span style="font-size: 14px; color: #666;">排序:</span>
+            <select id="sort_by" class="search-box" onchange="applyFilters()">
+                <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>创建时间</option>
+                <option value="case_no" {% if sort_by == 'case_no' %}selected{% endif %}>用例编号</option>
+                <option value="title" {% if sort_by == 'title' %}selected{% endif %}>用例标题</option>
+                <option value="status" {% if sort_by == 'status' %}selected{% endif %}>状态</option>
+                <option value="confirmed" {% if sort_by == 'confirmed' %}selected{% endif %}>确认状态</option>
+                <option value="confirmed_at" {% if sort_by == 'confirmed_at' %}selected{% endif %}>确认时间</option>
+            </select>
+            <select id="sort_order" class="search-box" onchange="applyFilters()">
+                <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>降序</option>
+                <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>升序</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fas fa-flask"></i> 测试用例列表</div>
         <table class="table">
             <thead>
                 <tr>
@@ -12,10 +69,14 @@
                     <th>用例标题</th>
                     <th>用例类型</th>
                     <th>关联需求</th>
+                    <th>关联参数表</th>
                     <th>前置条件</th>
                     <th>状态</th>
+                    <th>确认</th>
+                    <th>最近测试结果</th>
                     <th>自动化</th>
                     <th>创建时间</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -24,16 +85,195 @@
                     <td>{{ case.case_no }}</td>
                     <td>{{ case.title }}</td>
                     <td>{{ case.get_case_type_display }}</td>
-                    <td><a href="/requirements/{{ case.requirement.id }}/">{{ case.requirement.requirement_no }} - {{ case.requirement.title }}</a></td>
+                    <td><a href="/requirements/{{ case.requirement.id }}/">{{ case.requirement.requirement_no }}</a></td>
+                    <td>{{ case.parameter_table.name_en|default:'-' }}</td>
                     <td>{{ case.preconditions|default:'-'|truncatechars:50 }}</td>
                     <td><span class="badge badge-{{ case.status }}">{{ case.get_status_display }}</span></td>
-                    <td>{% if case.automated %}是{% else %}否{% endif %}</td>
+                    <td>
+                        {% if case.confirmed %}
+                        <span class="badge badge-success">已确认</span>
+                        {% else %}
+                        <span class="badge badge-warning">待确认</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if recent_results and recent_results|get_item:case.id %}
+                        <div style="max-width: 150px;">
+                            {% for result in recent_results|get_item:case.id %}
+                            <span class="badge badge-{{ result.status }}" style="margin-right: 4px; margin-bottom: 2px; display: inline-block;">
+                                {{ result.get_status_display }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{% if case.automated %}<span class="badge badge-info">是</span>{% else %}否{% endif %}</td>
                     <td>{{ case.created_at }}</td>
+                    <td>
+                        <a href="/test-cases/{{ case.id }}/" class="btn btn-info btn-sm"><i class="fas fa-edit"></i> 编辑</a>
+                        {% if is_technical and not case.confirmed %}
+                        <button class="btn btn-success btn-sm" onclick="confirmCase({{ case.id }})"><i class="fas fa-check"></i> 确认</button>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" style="text-align: center;">暂无测试用例</td></tr>
+                <tr><td colspan="12" style="text-align: center;">暂无测试用例</td></tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% include 'parameter/pagination.html' %}
     </div>
+
+    <div id="generateModal" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-magic"></i> 测试用例生成</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>选择参数表 <span style="color: red;">*</span></label>
+                        <select id="tableSelect" class="form-control">
+                            <option value="">请选择参数表</option>
+                            {% for table in tables %}
+                            <option value="{{ table.id }}">{{ table.name_en }} - {{ table.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 4px;">
+                        <p><strong>生成规则：</strong></p>
+                        <ul style="margin-left: 20px; font-size: 14px;">
+                            <li>根据参数表字段配置自动生成测试用例草稿</li>
+                            <li>包含正常流程、边界条件、异常场景测试</li>
+                            <li>生成的用例状态为"草稿"，需技术人员确认</li>
+                            <li>已存在的用例不会重复生成</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="generateCases()">生成</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showGenerateModal() {
+    $.ajax({
+        url: '/api/tables/',
+        type: 'GET',
+        success: function(data) {
+            var select = $('#tableSelect');
+            select.empty();
+            select.append('<option value="">请选择参数表</option>');
+            data.forEach(function(table) {
+                select.append('<option value="' + table.id + '">' + table.name_en + ' - ' + table.name + '</option>');
+            });
+            $('#generateModal').modal('show');
+        },
+        error: function() {
+            alert('获取参数表列表失败');
+        }
+    });
+}
+
+function generateCases() {
+    var tableId = $('#tableSelect').val();
+    if (!tableId) {
+        alert('请选择参数表');
+        return;
+    }
+    
+    $.ajax({
+        url: '/test-cases/',
+        type: 'POST',
+        data: {
+            'action': 'generate_cases',
+            'table_id': tableId,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(data) {
+            if (data.success) {
+                alert(data.message);
+                $('#generateModal').modal('hide');
+                location.reload();
+            } else {
+                alert('生成失败: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('生成失败');
+        }
+    });
+}
+
+function confirmCase(caseId) {
+    if (!confirm('确定要确认这条测试用例吗？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/test-cases/',
+        type: 'POST',
+        data: {
+            'action': 'confirm_case',
+            'case_id': caseId,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(data) {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('确认失败: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('确认失败');
+        }
+    });
+}
+
+function applyFilters() {
+    var params = [];
+    var req_no = $('#req_no_filter').val();
+    var table_name = $('#table_name_filter').val();
+    var type = $('#type_filter').val();
+    var status = $('#status_filter').val();
+    var confirmed = $('#confirmed_filter').val();
+    var sort_by = $('#sort_by').val();
+    var sort_order = $('#sort_order').val();
+    
+    if (req_no) params.push('req_no=' + encodeURIComponent(req_no));
+    if (table_name) params.push('table_name=' + encodeURIComponent(table_name));
+    if (type) params.push('type=' + type);
+    if (status) params.push('status=' + status);
+    if (confirmed) params.push('confirmed=' + confirmed);
+    if (sort_by) params.push('sort_by=' + sort_by);
+    if (sort_order) params.push('sort_order=' + sort_order);
+    
+    var url = '/test-cases/';
+    if (params.length > 0) {
+        url += '?' + params.join('&');
+    }
+    location.href = url;
+}
+
+function clearFilters() {
+    $('#req_no_filter').val('');
+    $('#table_name_filter').val('');
+    $('#type_filter').val('');
+    $('#status_filter').val('');
+    $('#confirmed_filter').val('');
+    $('#sort_by').val('created_at');
+    $('#sort_order').val('desc');
+    applyFilters();
+}
+</script>
 {% endblock %}

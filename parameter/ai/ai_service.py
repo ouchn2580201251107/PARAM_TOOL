@@ -113,6 +113,11 @@ class AIParameterTableAnalyzer:
 4. 必填字段标记"""
             
             result = ai_client.analyze(prompt, fields=fields_data)
+            
+            if not isinstance(result, dict):
+                logger.error(f"[AIParameterTableAnalyzer] AI分析返回结果不是字典类型，实际类型: {type(result)}")
+                return {"success": False, "error": "AI分析返回结果格式错误"}
+            
             logger.info(f"[AIParameterTableAnalyzer] 字段规范性分析完成，问题数: {result.get('details', {}).get('issues_count', 0)}")
             
             return result

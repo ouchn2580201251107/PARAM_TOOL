@@ -58,14 +58,14 @@ class MockAIClient(BaseAIClient):
         if "参数表统一" in prompt or "SIMPLELIST" in prompt:
             return self._mock_unification_analysis(prompt, kwargs)
         
-        if "字段规范" in prompt or "规范性" in prompt:
+        if "字段" in prompt and "规范" in prompt or "规范性" in prompt:
             return self._mock_normalization_analysis(prompt, kwargs)
         
         return {
             "success": True,
             "confidence": 0.85,
             "result": "分析完成。建议：请根据业务需求进行评估。",
-            "details": []
+            "details": {}
         }
     
     def generate(self, prompt, **kwargs):

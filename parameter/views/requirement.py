@@ -19,6 +19,7 @@ from django.http import HttpResponse
 
 from ..auth_views import login_required, admin_required, role_required
 from ..models import Requirement, ParameterTable, RequirementFieldConfig, FieldDefinition, Metadata
+from ..utils.pagination import paginate_queryset
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,8 @@ class RequirementListView(View):
             is_business = role_code in ['admin', 'business']
             is_technical = role_code in ['admin', 'technical']
             
+            pagination, requirements = paginate_queryset(request, requirements)
+            
             context = {
                 'requirements': requirements,
                 'status_filter': status_filter,
@@ -68,6 +71,7 @@ class RequirementListView(View):
                 'is_editable': is_editable,
                 'is_business': is_business,
                 'is_technical': is_technical,
+                'pagination': pagination,
             }
             logger.info(f"[RequirementListView] 需求列表查询成功，即将渲染模板")
             return render(request, 'parameter/requirement_list.html', context)
@@ -344,7 +348,12 @@ class RequirementExportView(View):
     def get(self, request):
         logger.info(f"[RequirementExportView] 业务人员导出需求ZIP")
         try:
-            requirements = Requirement.objects.all().order_by('-request_date')
+            ids_param = request.GET.get('ids')
+            if ids_param:
+                ids = [int(id.strip()) for id in ids_param.split(',') if id.strip().isdigit()]
+                requirements = Requirement.objects.filter(id__in=ids).order_by('-request_date')
+            else:
+                requirements = Requirement.objects.all().order_by('-request_date')
             
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f'requirements_{timestamp}.zip'
@@ -393,7 +402,7 @@ class RequirementExportView(View):
                 safe_table_name = self._safe_filename(table.name_en)
                 table_csv = io.StringIO()
                 writer = csv.writer(table_csv)
-                writer.writerow(['需求编号', '字段名', '显示名称', '字段类型', '长度', '小数位数', '前端控件类型', '存储方式', '是否必填', '校验规则', '排序号', '是否确认'])
+                writer.writerow(['需求编号', '字段名', '显示名称', '字段类型', '长度', '小数位数', '前端控件类型', '存储方式', '是否必填', '校验规则', '排序号'])
                 
                 for req, field in data['field_configs']:
                     writer.writerow([
@@ -408,7 +417,6 @@ class RequirementExportView(View):
                         '是' if field.is_required else '否',
                         field.validation_rule or '',
                         field.sort_order,
-                        '是' if field.is_confirmed else '否',
                     ])
                 file_contents[f'{safe_table_name}.csv'] = table_csv.getvalue()
             
@@ -440,24 +448,60 @@ class RequirementExportView(View):
         return name[:100]
 
 
-@method_decorator(role_required(['admin', 'technical']), name='dispatch')
-class RequirementImportView(View):
+class BaseZIPImportView(View):
     """
-    需求ZIP导入视图
-    技术人员可以导入业务人员导出的ZIP文件并进行编辑
-    验证version_hash确保版本匹配
-    编辑内容进行高亮标记
+    ZIP导入基类视图
+    提供通用的ZIP文件导入逻辑，通过多态方法实现不同导入类型的差异化处理
+    支持根据ZIP文件内容自动检测导入类型
     """
+    
+    IMPORT_TYPES = {
+        'requirement.csv': 'standard',
+        'requirement_response.csv': 'response',
+    }
+    
+    import_template = ''
+    
+    def _get_import_template(self):
+        return self.import_template
+    
+    def _detect_import_type(self, file_list):
+        """
+        根据ZIP文件内容自动检测导入类型
+        """
+        for csv_file, import_type in self.IMPORT_TYPES.items():
+            if csv_file in file_list:
+                return import_type, csv_file
+        return None, None
+    
+    def _parse_csv_row(self, row, import_type):
+        """
+        解析CSV行数据，根据导入类型实现不同的解析逻辑
+        """
+        raise NotImplementedError
+    
+    def _get_additional_files(self, zf, file_list, import_type):
+        """
+        获取ZIP中的额外文件数据，子类可重写此方法
+        """
+        return {}
+    
+    def _process_imported_data(self, request, imported_data, additional_data, version_hash, import_type):
+        """
+        处理导入的数据，根据导入类型实现不同的处理逻辑
+        """
+        raise NotImplementedError
+    
     def get(self, request):
-        logger.info(f"[RequirementImportView] 技术人员加载导入页面")
-        return render(request, 'parameter/requirement_import.html')
+        logger.info(f"[{self.__class__.__name__}] 加载导入页面")
+        return render(request, self._get_import_template())
     
     def post(self, request):
-        logger.info(f"[RequirementImportView] 技术人员导入需求ZIP")
+        logger.info(f"[{self.__class__.__name__}] 开始导入ZIP")
         try:
             zip_file = request.FILES.get('zip_file')
             if not zip_file:
-                return render(request, 'parameter/requirement_import.html', {'error': '请选择ZIP文件'})
+                return render(request, self._get_import_template(), {'error': '请选择ZIP文件'})
             
             zip_data = zip_file.read()
             zip_buffer = io.BytesIO(zip_data)
@@ -466,22 +510,23 @@ class RequirementImportView(View):
                 file_list = zf.namelist()
                 
                 if 'version_hash' not in file_list:
-                    return render(request, 'parameter/requirement_import.html', {'error': 'ZIP文件中缺少version_hash文件，请重新导出'})
+                    return render(request, self._get_import_template(), {'error': 'ZIP文件中缺少version_hash文件，请重新导出'})
                 
-                if 'requirement.csv' not in file_list:
-                    return render(request, 'parameter/requirement_import.html', {'error': 'ZIP文件中缺少requirement.csv文件'})
+                import_type, required_file = self._detect_import_type(file_list)
+                if import_type is None:
+                    return render(request, self._get_import_template(), {'error': '无法识别ZIP文件类型，请确保上传正确的需求或反馈ZIP文件'})
                 
                 version_hash = zf.read('version_hash').decode('utf-8').strip()
                 
                 last_export_hash = request.session.get('last_export_version_hash')
                 if not last_export_hash:
-                    return render(request, 'parameter/requirement_import.html', {'error': '未找到对应的导出版本，请先导出需求'})
+                    return render(request, self._get_import_template(), {'error': '未找到对应的导出版本，请先导出需求'})
                 
                 if version_hash != last_export_hash:
-                    return render(request, 'parameter/requirement_import.html', {'error': f'版本不匹配，当前版本: {version_hash[:8]}...，期望版本: {last_export_hash[:8]}...，请重新导出并导入'})
+                    return render(request, self._get_import_template(), {'error': f'版本不匹配，当前版本: {version_hash[:8]}...，期望版本: {last_export_hash[:8]}...，请重新导出并导入'})
                 
-                requirement_csv_content = zf.read('requirement.csv').decode('utf-8-sig')
-                io_string = io.StringIO(requirement_csv_content)
+                csv_content = zf.read(required_file).decode('utf-8-sig')
+                io_string = io.StringIO(csv_content)
                 reader = csv.reader(io_string)
                 
                 headers = next(reader)
@@ -490,48 +535,150 @@ class RequirementImportView(View):
                 for row in reader:
                     if len(row) < 8:
                         continue
-                    
-                    imported_data.append({
-                        'requirement_no': row[0],
-                        'title': row[1],
-                        'requirement_type': row[2],
-                        'parameter_table': row[3],
-                        'business_description': row[4] if len(row) > 4 else '',
-                        'requester': row[5] if len(row) > 5 else '',
-                        'status': row[6] if len(row) > 6 else '',
-                        'flow_status': row[7] if len(row) > 7 else '',
-                        'request_date': row[8] if len(row) > 8 else '',
-                        'modified_fields': [],
-                        'tech_comments': '',
-                    })
+                    imported_data.append(self._parse_csv_row(row, import_type))
                 
-                field_configs_data = {}
-                for file_name in file_list:
-                    if file_name.endswith('.csv') and file_name != 'requirement.csv':
-                        table_name = file_name.replace('.csv', '')
-                        csv_content = zf.read(file_name).decode('utf-8-sig')
-                        field_configs_data[table_name] = csv_content
+                additional_data = self._get_additional_files(zf, file_list, import_type)
             
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            session_key = f'requirement_import_{timestamp}'
-            request.session[session_key] = {
-                'imported_data': imported_data,
-                'field_configs_data': field_configs_data,
-                'version_hash': version_hash,
-            }
+            logger.info(f"[{self.__class__.__name__}] ZIP导入成功，导入类型: {import_type}, 记录数: {len(imported_data)}, version_hash: {version_hash}")
             
-            logger.info(f"[RequirementImportView] ZIP导入成功，记录数: {len(imported_data)}, session_key: {session_key}, version_hash: {version_hash}")
-            
-            return render(request, 'parameter/requirement_import_edit.html', {
-                'imported_data': imported_data,
-                'import_key': session_key,
-            })
+            return self._process_imported_data(request, imported_data, additional_data, version_hash, import_type)
         except zipfile.BadZipFile:
-            logger.error(f"[RequirementImportView] 无效的ZIP文件")
-            return render(request, 'parameter/requirement_import.html', {'error': '无效的ZIP文件，请确保上传的是有效的ZIP压缩包'})
+            logger.error(f"[{self.__class__.__name__}] 无效的ZIP文件")
+            return render(request, self._get_import_template(), {'error': '无效的ZIP文件，请确保上传的是有效的ZIP压缩包'})
         except Exception as e:
-            logger.error(f"[RequirementImportView] 导入需求ZIP失败: {str(e)}", exc_info=True)
-            return render(request, 'parameter/requirement_import.html', {'error': str(e)})
+            logger.error(f"[{self.__class__.__name__}] 导入ZIP失败: {str(e)}", exc_info=True)
+            return render(request, self._get_import_template(), {'error': str(e)})
+
+
+@method_decorator(login_required, name='dispatch')
+class RequirementZIPImportView(BaseZIPImportView):
+    """
+    统一的需求ZIP导入视图
+    根据用户角色和上传文件类型自动判断导入方式：
+    - 技术人员(technical): 导入需求ZIP进行编辑，或导入反馈ZIP进行查看
+    - 业务人员(business): 导入反馈ZIP查看技术调整内容
+    支持自动检测ZIP文件类型（需求文件/反馈文件）
+    """
+    
+    import_template = 'parameter/requirement_import_unified.html'
+    
+    def _parse_csv_row(self, row, import_type):
+        if import_type == 'standard':
+            return {
+                'requirement_no': row[0],
+                'title': row[1],
+                'requirement_type': row[2],
+                'parameter_table': row[3],
+                'business_description': row[4] if len(row) > 4 else '',
+                'requester': row[5] if len(row) > 5 else '',
+                'status': row[6] if len(row) > 6 else '',
+                'flow_status': row[7] if len(row) > 7 else '',
+                'request_date': row[8] if len(row) > 8 else '',
+                'modified_fields': [],
+                'tech_comments': '',
+            }
+        elif import_type == 'response':
+            return {
+                'requirement_no': row[0],
+                'title': row[1],
+                'requirement_type': row[2],
+                'parameter_table': row[3],
+                'business_description': row[4] if len(row) > 4 else '',
+                'requester': row[5] if len(row) > 5 else '',
+                'status': row[6] if len(row) > 6 else '',
+                'flow_status': row[7] if len(row) > 7 else '',
+                'request_date': row[8] if len(row) > 8 else '',
+                'modified_fields': row[9].split(',') if len(row) > 9 and row[9] else [],
+                'tech_comments': row[10] if len(row) > 10 else '',
+            }
+    
+    def _get_additional_files(self, zf, file_list, import_type):
+        if import_type == 'standard':
+            field_configs_data = {}
+            for file_name in file_list:
+                if file_name.endswith('.csv') and file_name != 'requirement.csv':
+                    table_name = file_name.replace('.csv', '')
+                    csv_content = zf.read(file_name).decode('utf-8-sig')
+                    field_configs_data[table_name] = csv_content
+            return field_configs_data
+        return {}
+    
+    def _process_imported_data(self, request, imported_data, additional_data, version_hash, import_type):
+        role_code = request.user.role.role_code
+        
+        if role_code in ['admin', 'technical']:
+            if import_type == 'standard':
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                session_key = f'requirement_import_{timestamp}'
+                request.session[session_key] = {
+                    'imported_data': imported_data,
+                    'field_configs_data': additional_data,
+                    'version_hash': version_hash,
+                }
+                return render(request, 'parameter/requirement_import_edit.html', {
+                    'imported_data': imported_data,
+                    'import_key': session_key,
+                })
+            elif import_type == 'response':
+                return render(request, 'parameter/requirement_response_view.html', {
+                    'response_data': imported_data,
+                })
+        elif role_code in ['admin', 'business']:
+            return render(request, 'parameter/requirement_response_view.html', {
+                'response_data': imported_data,
+            })
+        
+        return render(request, 'parameter/error.html', {'message': '无权限执行此操作'})
+
+
+@method_decorator(role_required(['admin', 'technical']), name='dispatch')
+class RequirementImportView(BaseZIPImportView):
+    """
+    需求ZIP导入视图（技术人员专用，保留兼容）
+    技术人员可以导入业务人员导出的ZIP文件并进行编辑
+    验证version_hash确保版本匹配
+    编辑内容进行高亮标记
+    """
+    
+    import_template = 'parameter/requirement_import.html'
+    
+    def _parse_csv_row(self, row, import_type):
+        return {
+            'requirement_no': row[0],
+            'title': row[1],
+            'requirement_type': row[2],
+            'parameter_table': row[3],
+            'business_description': row[4] if len(row) > 4 else '',
+            'requester': row[5] if len(row) > 5 else '',
+            'status': row[6] if len(row) > 6 else '',
+            'flow_status': row[7] if len(row) > 7 else '',
+            'request_date': row[8] if len(row) > 8 else '',
+            'modified_fields': [],
+            'tech_comments': '',
+        }
+    
+    def _get_additional_files(self, zf, file_list, import_type):
+        field_configs_data = {}
+        for file_name in file_list:
+            if file_name.endswith('.csv') and file_name != 'requirement.csv':
+                table_name = file_name.replace('.csv', '')
+                csv_content = zf.read(file_name).decode('utf-8-sig')
+                field_configs_data[table_name] = csv_content
+        return field_configs_data
+    
+    def _process_imported_data(self, request, imported_data, additional_data, version_hash, import_type):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        session_key = f'requirement_import_{timestamp}'
+        request.session[session_key] = {
+            'imported_data': imported_data,
+            'field_configs_data': additional_data,
+            'version_hash': version_hash,
+        }
+        
+        return render(request, 'parameter/requirement_import_edit.html', {
+            'imported_data': imported_data,
+            'import_key': session_key,
+        })
 
 
 @method_decorator(role_required(['admin', 'technical']), name='dispatch')
@@ -672,80 +819,34 @@ class RequirementExportResponseView(View):
 
 
 @method_decorator(role_required(['admin', 'business']), name='dispatch')
-class RequirementImportResponseView(View):
+class RequirementImportResponseView(BaseZIPImportView):
     """
-    需求反馈ZIP导入视图
+    需求反馈ZIP导入视图（业务人员专用）
     业务人员导入技术人员反馈的ZIP文件，查看技术调整内容
     验证version_hash确保版本匹配
     """
-    def get(self, request):
-        logger.info(f"[RequirementImportResponseView] 业务人员加载反馈导入页面")
-        return render(request, 'parameter/requirement_import_response.html')
     
-    def post(self, request):
-        logger.info(f"[RequirementImportResponseView] 业务人员导入反馈ZIP")
-        try:
-            zip_file = request.FILES.get('zip_file')
-            if not zip_file:
-                return render(request, 'parameter/requirement_import_response.html', {'error': '请选择ZIP文件'})
-            
-            zip_data = zip_file.read()
-            zip_buffer = io.BytesIO(zip_data)
-            
-            with zipfile.ZipFile(zip_buffer, 'r') as zf:
-                file_list = zf.namelist()
-                
-                if 'version_hash' not in file_list:
-                    return render(request, 'parameter/requirement_import_response.html', {'error': 'ZIP文件中缺少version_hash文件，请重新导出'})
-                
-                if 'requirement_response.csv' not in file_list:
-                    return render(request, 'parameter/requirement_import_response.html', {'error': 'ZIP文件中缺少requirement_response.csv文件'})
-                
-                version_hash = zf.read('version_hash').decode('utf-8').strip()
-                
-                last_export_hash = request.session.get('last_export_version_hash')
-                if not last_export_hash:
-                    return render(request, 'parameter/requirement_import_response.html', {'error': '未找到对应的导出版本，请先导出需求'})
-                
-                if version_hash != last_export_hash:
-                    return render(request, 'parameter/requirement_import_response.html', {'error': f'版本不匹配，当前版本: {version_hash[:8]}...，期望版本: {last_export_hash[:8]}...，请重新导出并导入'})
-                
-                response_csv_content = zf.read('requirement_response.csv').decode('utf-8-sig')
-                io_string = io.StringIO(response_csv_content)
-                reader = csv.reader(io_string)
-                
-                headers = next(reader)
-                
-                response_data = []
-                for row in reader:
-                    if len(row) < 8:
-                        continue
-                    
-                    response_data.append({
-                        'requirement_no': row[0],
-                        'title': row[1],
-                        'requirement_type': row[2],
-                        'parameter_table': row[3],
-                        'business_description': row[4] if len(row) > 4 else '',
-                        'requester': row[5] if len(row) > 5 else '',
-                        'status': row[6] if len(row) > 6 else '',
-                        'flow_status': row[7] if len(row) > 7 else '',
-                        'request_date': row[8] if len(row) > 8 else '',
-                        'modified_fields': row[9].split(',') if len(row) > 9 and row[9] else [],
-                        'tech_comments': row[10] if len(row) > 10 else '',
-                    })
-            
-            logger.info(f"[RequirementImportResponseView] 反馈ZIP导入成功，记录数: {len(response_data)}, version_hash: {version_hash}")
-            
-            return render(request, 'parameter/requirement_response_view.html', {
-                'response_data': response_data,
-            })
-        except zipfile.BadZipFile:
-            logger.error(f"[RequirementImportResponseView] 无效的ZIP文件")
-            return render(request, 'parameter/requirement_import_response.html', {'error': '无效的ZIP文件，请确保上传的是有效的ZIP压缩包'})
-        except Exception as e:
-            logger.error(f"[RequirementImportResponseView] 导入反馈ZIP失败: {str(e)}", exc_info=True)
-            return render(request, 'parameter/requirement_import_response.html', {'error': str(e)})
+    import_template = 'parameter/requirement_import_response.html'
+    
+    def _parse_csv_row(self, row, import_type):
+        return {
+            'requirement_no': row[0],
+            'title': row[1],
+            'requirement_type': row[2],
+            'parameter_table': row[3],
+            'business_description': row[4] if len(row) > 4 else '',
+            'requester': row[5] if len(row) > 5 else '',
+            'status': row[6] if len(row) > 6 else '',
+            'flow_status': row[7] if len(row) > 7 else '',
+            'request_date': row[8] if len(row) > 8 else '',
+            'modified_fields': row[9].split(',') if len(row) > 9 and row[9] else [],
+            'tech_comments': row[10] if len(row) > 10 else '',
+        }
+    
+    def _process_imported_data(self, request, imported_data, additional_data, version_hash, import_type):
+        return render(request, 'parameter/requirement_response_view.html', {
+            'response_data': imported_data,
+        })
 
 
 @method_decorator(role_required(['admin', 'business']), name='dispatch')

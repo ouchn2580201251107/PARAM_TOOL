@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 
 from ..auth_views import login_required, role_required
 from ..models import Metadata
+from ..utils.pagination import paginate_queryset
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +34,13 @@ class MetadataListView(View):
             is_editable = request.user.role.role_code in ['admin', 'technical']
             logger.info(f"[MetadataListView] 当前用户可编辑: {is_editable}")
             
+            pagination, metadata_list = paginate_queryset(request, metadata_list)
+            
             context = {
                 'metadata_list': metadata_list,
                 'is_editable': is_editable,
                 'search_name': search_name,
+                'pagination': pagination,
             }
             logger.info(f"[MetadataListView] 元数据列表查询成功，即将渲染模板")
             return render(request, 'parameter/metadata_list.html', context)

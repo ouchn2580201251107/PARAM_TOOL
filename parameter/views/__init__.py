@@ -8,7 +8,7 @@ from .parameter_table import ParameterTableListView, ParameterTableDetailView
 from .metadata import MetadataListView, MetadataCreateView, MetadataEditView, MetadataDeleteView
 from .requirement import RequirementListView, RequirementDetailView, RequirementCreateView, RequirementUpdateStatusView
 from .task_document import TaskDocumentListView, TaskDocumentExportView
-from .config import ConfigScriptListView, ConfigScriptSubmitView, IndexIdConfigListView
+from .config import ConfigScriptListView, ConfigScriptSubmitView, ProductTableConfigListView
 from .test import TestCaseListView, AutomationTestResultView
 from .springboot import SpringBootGeneratorView, SpringBootDownloadView
 from .sql_manager import SqlManagerView
@@ -29,7 +29,7 @@ __all__ = [
     'TaskDocumentExportView',
     'ConfigScriptListView',
     'ConfigScriptSubmitView',
-    'IndexIdConfigListView',
+    'ProductTableConfigListView',
     'TestCaseListView',
     'AutomationTestResultView',
     'SpringBootGeneratorView',
